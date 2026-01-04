@@ -79,8 +79,11 @@
       }
 
       function guestLogin() {
-        // サーバーに保存しない。URLで guest=1 を渡して閲覧モードで入る
-        location.href = '?page=inventory&guest=1';
+        // 絶対URLで遷移（iframe/相対URL事故を防ぐ）
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', 'inventory');
+        url.searchParams.set('guest', '1');
+        window.top.location.href = url.toString();
       }
     </script>
   </body>
