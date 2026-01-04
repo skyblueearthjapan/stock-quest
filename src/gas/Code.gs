@@ -1,64 +1,81 @@
 function doGet(e) {
   const page = (e && e.parameter && e.parameter.page) ? e.parameter.page : 'login';
-  const isGuest = (e && e.parameter && e.parameter.guest === '1');
-
-  // ★強制デバッグ：ここだけで表示できるか確認（最優先）
-  if (page === 'ping') {
-    return HtmlService.createHtmlOutput(
-      '<div style="font-family:system-ui;padding:20px">' +
-      '<h2>PING OK</h2>' +
-      '<pre>' + JSON.stringify({time:new Date().toISOString(), params:(e && e.parameter)||{}}, null, 2) + '</pre>' +
-      '</div>'
-    );
-  }
+  const data = buildData_(e);
 
   try {
-    // 1) ログイン画面は常に表示OK
-    if (page === 'login') return render_('login', {});
+    // pingは最優先（デバッグ用）
+    if (page === 'ping') {
+      return HtmlService.createHtmlOutput(
+        '<div style="font-family:system-ui;padding:20px">' +
+        '<h2>PING OK</h2>' +
+        '<pre>' + JSON.stringify({time:new Date().toISOString(), params:(e && e.parameter)||{}}, null, 2) + '</pre>' +
+        '</div>'
+      );
+    }
 
-    // 2) ログアウト：JSリダイレクト禁止 → loginを直接返す
+    // ログイン画面
+    if (page === 'login') {
+      return render_('login', data);
+    }
+
+    // ログアウト
     if (page === 'logout') {
       logout_();
-      return render_('login', { logged_out: true });
+      data.logged_out = true;
+      return render_('login', data);
     }
 
-    // 3) ここから先は「ログイン or ゲスト」ならOK
-    const u = currentUser_();
-    if (!u && !isGuest) {
-      return render_('login', { need_login: true });
+    // ここから先は「ログイン or ゲスト」必須
+    if (!data.user && !data.guest) {
+      data.need_login = true;
+      return render_('login', data);
     }
 
-    // 4) 入口は inventory（フェーズ2）
+    // home → inventory へリダイレクト
     if (page === 'home') {
-      // homeは廃止でもOK。inventoryへ案内ページを返す
       return HtmlService.createHtmlOutput(
-        '<meta http-equiv="refresh" content="0;url=?page=inventory' + (isGuest ? '&guest=1' : '') + '">' +
+        '<meta http-equiv="refresh" content="0;url=?page=inventory' + (data.guest ? '&guest=1' : '') + '">' +
         '<div style="font-family:system-ui;padding:16px;">Redirecting...</div>'
       );
     }
 
+    // 在庫一覧
     if (page === 'inventory') {
-      return render_('inventory', { guest: isGuest });
+      return render_('inventory', data);
     }
 
+    // 在庫詳細
     if (page === 'inv_detail') {
-      const id = (e.parameter && e.parameter.id) ? String(e.parameter.id) : '';
-      return render_('inventory_detail', { inventory_id: id, guest: isGuest });
+      data.inventory_id = (e.parameter && e.parameter.id) ? String(e.parameter.id) : '';
+      return render_('inventory_detail', data);
     }
 
-    // 未定義
-    return renderError_(new Error('PAGE_NOT_FOUND: ' + page), { page, params: e.parameter });
+    // 未定義ページ → inventoryへフォールバック
+    return render_('inventory', data);
+
   } catch (err) {
     return safePlainError_(err, { page, params: (e && e.parameter) });
   }
 }
 
+/** データ構築（全ページ共通） */
+function buildData_(e) {
+  const isGuest = (e && e.parameter && e.parameter.guest === '1');
+  const u = currentUser_();
+
+  return {
+    appTitle: ENV.APP_TITLE,
+    guest: isGuest,
+    user: u || (isGuest ? { user_id: 'GUEST', role: 'guest', display_name: 'ゲスト' } : null)
+  };
+}
+
 /** 最終退避：テンプレが壊れても必ず出す */
 function safePlainError_(err, context) {
-  const msg = (err && err.message) ? err.message : String(err);
+  const msg = (err && err.stack) ? err.stack : (err && err.message) ? err.message : String(err);
   const html =
     '<div style="font-family:system-ui; padding:16px;">' +
-    '<h2>App Error</h2>' +
+    '<h2 style="color:#b91c1c;margin:0 0 8px;">App Error</h2>' +
     '<pre style="white-space:pre-wrap; background:#f6f8fa; padding:12px; border-radius:8px;">' +
     escapeHtml_(msg) + '\n\n' + escapeHtml_(JSON.stringify(context || {}, null, 2)) +
     '</pre>' +
