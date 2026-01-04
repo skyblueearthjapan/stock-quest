@@ -38,9 +38,9 @@
     <script>
       function doLogout() {
         google.script.run.withSuccessHandler(function() {
-          window.top.location.reload();
+          location.reload();
         }).withFailureHandler(function() {
-          window.top.location.reload();
+          location.reload();
         }).api_logout();
       }
     </script>
