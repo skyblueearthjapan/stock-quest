@@ -79,10 +79,10 @@
       }
 
       function guestLogin() {
-        // 絶対URLで遷移（iframe/相対URL事故を防ぐ）
+        // ★デバッグ用：まずpingで遷移テスト
         const url = new URL(window.location.href);
-        url.searchParams.set('page', 'inventory');
-        url.searchParams.set('guest', '1');
+        url.searchParams.set('page', 'ping');
+        url.searchParams.set('from', 'guestButton');
         window.top.location.href = url.toString();
       }
     </script>

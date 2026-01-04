@@ -2,6 +2,16 @@ function doGet(e) {
   const page = (e && e.parameter && e.parameter.page) ? e.parameter.page : 'login';
   const isGuest = (e && e.parameter && e.parameter.guest === '1');
 
+  // ★強制デバッグ：ここだけで表示できるか確認（最優先）
+  if (page === 'ping') {
+    return HtmlService.createHtmlOutput(
+      '<div style="font-family:system-ui;padding:20px">' +
+      '<h2>PING OK</h2>' +
+      '<pre>' + JSON.stringify({time:new Date().toISOString(), params:(e && e.parameter)||{}}, null, 2) + '</pre>' +
+      '</div>'
+    );
+  }
+
   try {
     // 1) ログイン画面は常に表示OK
     if (page === 'login') return render_('login', {});
