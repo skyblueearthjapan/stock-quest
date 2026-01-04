@@ -10,7 +10,7 @@
  * 1) GASエディタで seedRunAll() を実行
  */
 function seedRunAll() {
-  const ss = SpreadsheetApp.openById(ENV.SSID);
+  const ss = SpreadsheetApp.openById(ENV.SPREADSHEET_ID);
   const now = new Date().toISOString();
 
   // ▼必要ならここだけ実際のシート名に合わせて変更
