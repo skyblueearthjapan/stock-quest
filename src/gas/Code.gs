@@ -38,14 +38,7 @@ function doGet(e) {
     }
 
     if (page === 'inventory') {
-      // ★切り分け用：テンプレを使わず必ず表示
-      return HtmlService.createHtmlOutput(
-        '<div style="font-family:system-ui;padding:20px">' +
-        '<h2>INVENTORY ROUTE OK</h2>' +
-        '<pre>' + JSON.stringify({page, params: e && e.parameter}, null, 2) + '</pre>' +
-        '<p><a href="?page=login">back to login</a></p>' +
-        '</div>'
-      );
+      return render_('inventory', { guest: isGuest });
     }
 
     if (page === 'inv_detail') {

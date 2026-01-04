@@ -1,131 +1,13 @@
 <!doctype html>
 <html>
 <head>
+  <meta charset="utf-8">
   <base target="_top">
-  <?!= include('assets_css'); ?>
+  <title>Inventory</title>
 </head>
-<body>
-<div class="container">
-  <div class="topbar">
-    <div class="brand"><?= data.appTitle ?></div>
-    <div class="userbox">
-      ログイン中：<b><?= data.user.display_name ?></b>
-      （<?= data.user.role ?><?= data.user.role === 'guest' ? ' / 閲覧のみ' : '' ?>）
-      <a class="link" href="?page=logout">ログアウト</a>
-    </div>
-  </div>
-
-  <h1 class="title">在庫一覧</h1>
-
-  <div class="card">
-    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-      <div style="flex:1; min-width:220px;">
-        <label>検索（在庫ID / 部品名）</label>
-        <input id="q" placeholder="例：INV-00012 / ベアリング" onkeydown="if(event.key==='Enter')load()">
-      </div>
-      <div style="min-width:220px;">
-        <label>カテゴリ</label>
-        <select id="cat" style="width:100%; padding:11px 12px; border-radius:12px; border:1px solid var(--border);"
-                onchange="load()"></select>
-      </div>
-      <div>
-        <label>&nbsp;</label>
-        <button class="btn" onclick="load()">検索</button>
-      </div>
-    </div>
-
-    <div id="tabs" class="candidates" style="margin-top:14px;"></div>
-  </div>
-
-  <div class="card">
-    <div id="msg" class="msg">読み込み中...</div>
-    <div id="list"></div>
-  </div>
-</div>
-
-<?!= include('assets_js'); ?>
-<script>
-  const IS_GUEST = <?= (data.user && data.user.role === 'guest') ? 'true' : 'false' ?>;
-  let categories = [];
-
-  function renderTabs(active){
-    const el = document.getElementById('tabs');
-    el.innerHTML = '';
-    categories.forEach(c => {
-      const b = document.createElement('button');
-      b.className = 'chip';
-      b.textContent = c;
-      b.style.borderColor = (c===active) ? 'var(--accent)' : 'var(--border)';
-      b.onclick = () => { document.getElementById('cat').value = c; load(); };
-      el.appendChild(b);
-    });
-  }
-
-  function load(){
-    const cat = document.getElementById('cat').value;
-    const q = document.getElementById('q').value;
-    const msg = document.getElementById('msg');
-    msg.textContent = '読み込み中...';
-
-    google.script.run.withSuccessHandler(res => {
-      categories = res.categories || [];
-      // select
-      const sel = document.getElementById('cat');
-      if (sel.options.length === 0) {
-        const optAll = document.createElement('option');
-        optAll.value = '';
-        optAll.textContent = 'すべて';
-        sel.appendChild(optAll);
-        categories.forEach(c => {
-          const opt = document.createElement('option');
-          opt.value = c;
-          opt.textContent = c;
-          sel.appendChild(opt);
-        });
-      }
-      renderTabs(sel.value);
-
-      const list = document.getElementById('list');
-      list.innerHTML = '';
-      msg.textContent = `${res.items.length} 件`;
-
-      res.items.forEach(it => {
-        const div = document.createElement('div');
-        div.className = 'card';
-        div.style.margin = '12px 0';
-        div.style.cursor = 'pointer';
-        // ゲストの場合は guest=1 を引き継ぐ
-        const guestParam = IS_GUEST ? '&guest=1' : '';
-        div.onclick = () => location.href = `?page=inv_detail&id=${encodeURIComponent(it.inventory_id)}${guestParam}`;
-
-        div.innerHTML = `
-          <div style="display:flex; gap:14px; align-items:center;">
-            <div style="width:64px; height:64px; border-radius:14px; border:1px solid var(--border);
-                        background:#f9fafb; display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--muted);">
-              ${it.size_class || '-'}
-            </div>
-            <div style="flex:1;">
-              <div style="font-weight:900; font-size:16px;">${escapeHtml(it.part_name)}</div>
-              <div style="color:var(--muted); font-size:13px;">
-                ${escapeHtml(it.inventory_id)} / ${escapeHtml(it.category)} / 在庫：${it.qty}
-              </div>
-            </div>
-            <div style="color:var(--accent); font-weight:900;">詳細 →</div>
-          </div>
-        `;
-        list.appendChild(div);
-      });
-    }).withFailureHandler(err => {
-      msg.textContent = `エラー：${err.message || err}`;
-    }).api_inventoryList(cat, q, IS_GUEST);
-  }
-
-  function escapeHtml(s){
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  }
-
-  load();
-</script>
+<body style="font-family:system-ui; padding:20px;">
+  <h2>INVENTORY TEMPLATE OK</h2>
+  <pre><?= JSON.stringify(data, null, 2) ?></pre>
+  <p><a href="?page=ping">ping</a> / <a href="?page=login">login</a></p>
 </body>
 </html>
