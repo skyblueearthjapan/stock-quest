@@ -45,9 +45,10 @@ function doGet(e) {
       return render_('inventory', data);
     }
 
-    // 在庫詳細
-    if (page === 'inv_detail') {
-      data.inventory_id = (e.parameter && e.parameter.id) ? String(e.parameter.id) : '';
+    // 在庫詳細（両方のパラメータ名に対応）
+    if (page === 'inventory_detail' || page === 'inv_detail') {
+      data.inventory_id = (e.parameter && (e.parameter.inventory_id || e.parameter.id))
+        ? String(e.parameter.inventory_id || e.parameter.id) : '';
       return render_('inventory_detail', data);
     }
 

@@ -199,11 +199,9 @@
         card.className = 'card item-card';
         card.style.margin = '0';
 
-        // ゲストパラメータを引き継ぐ
-        const guestParam = IS_GUEST ? '&guest=1' : '';
-        card.onclick = () => {
-          window.location.href = BASE_URL + '?page=inv_detail&id=' + encodeURIComponent(item.inventory_id) + guestParam;
-        };
+        // 詳細ページURL生成
+        const detailUrl = buildDetailUrl(item.inventory_id);
+        card.onclick = () => { window.location.href = detailUrl; };
 
         // サムネイル
         let thumbContent = item.size_class || '-';
@@ -221,7 +219,7 @@
               '</div>' +
               '<div class="item-meta">在庫：<span class="item-qty">' + item.qty + '</span></div>' +
             '</div>' +
-            '<div class="item-arrow">→</div>' +
+            '<a class="item-arrow" href="' + detailUrl + '" onclick="event.stopPropagation();">→</a>' +
           '</div>';
 
         grid.appendChild(card);
@@ -234,6 +232,15 @@
     function escapeHtml(s) {
       return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    // 詳細ページURLを安全に生成
+    function buildDetailUrl(inventoryId) {
+      const url = new URL(BASE_URL);
+      url.searchParams.set('page', 'inventory_detail');
+      url.searchParams.set('inventory_id', inventoryId);
+      if (IS_GUEST) url.searchParams.set('guest', '1');
+      return url.toString();
     }
 
     // 初期ロード
