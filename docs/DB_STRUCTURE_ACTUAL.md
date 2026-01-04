@@ -1004,6 +1004,150 @@ updated_by: admin
 
 ---
 
-## 以下、追加のスクリーンショットを受け取り次第追記
+## UserStatsCache シート（集計キャッシュ）
 
-（続きをお送りください）
+**説明**: ユーザー×期間ごとの集計を高速表示するためのキャッシュ。ランキングやキャラ詳細画面で使用。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| user_id* | ◯ | ユーザーID（Users参照） |
+| period_id* | ◯ | 期間ID（Periods参照） |
+| xp* | ◯ | 経験値（XP） |
+| level* | ◯ | レベル |
+| points | | ポイント（XPと同義、表示用） |
+| uses | | 使用回数 |
+| views | | 閲覧回数 |
+| badges_count | | 獲得バッジ数 |
+| last_updated_at | | 最終更新日時 |
+| notes | | メモ |
+
+**サンプルデータ**:
+```
+user_id: U-001
+period_id: P-2026-01
+xp: 15
+level: 6
+points: 15
+uses: 5
+views: 42
+badges_count: 3
+last_updated_at: 2026-01-04 12:00
+notes: 2026年1月の集計キャッシュ
+
+user_id: U-001
+period_id: P-2026-H1
+xp: 32
+level: 11
+points: 32
+uses: 12
+views: 120
+badges_count: 5
+last_updated_at: 2026-06-30 23:59
+notes: 2026上半期の集計キャッシュ
+```
+
+**複合キー**: user_id + period_id
+
+**更新タイミング**:
+- 使用確定時にリアルタイム更新
+- 閲覧ログ登録時に更新
+- 日次バッチで全件再計算（整合性担保）
+
+---
+
+## Report_Official シート（社長向け公式レポート）
+
+**説明**: 半期ごとの公式レポート用データ。印刷/PDF出力の元データ。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| period_id* | ◯ | 期間ID（Periods参照） |
+| metric* | ◯ | 指標名（use_count, view_count, xp_total等） |
+| user_id | | ユーザーID（個人レポート時） |
+| display_name | | 表示名 |
+| value* | ◯ | 値 |
+| unit | | 単位（回、XP等） |
+| rank | | 順位（ランキング時） |
+| notes | | メモ |
+
+**サンプルデータ（全体サマリー）**:
+```
+period_id: P-2026-H1
+metric: total_uses
+value: 156
+unit: 件
+notes: 半期の全使用件数
+
+period_id: P-2026-H1
+metric: active_users
+value: 12
+unit: 人
+notes: 使用実績がある人数
+
+period_id: P-2026-H1
+metric: total_views
+value: 1240
+unit: 回
+notes: 半期の閲覧回数
+```
+
+**サンプルデータ（個人ランキング）**:
+```
+period_id: P-2026-H1
+metric: use_count
+user_id: U-001
+display_name: 山田太郎
+value: 15
+unit: 回
+rank: 1
+notes: 使用回数TOP1
+
+period_id: P-2026-H1
+metric: use_count
+user_id: U-003
+display_name: 佐藤花子
+value: 12
+unit: 回
+rank: 2
+notes: 使用回数TOP2
+```
+
+**metric 一覧**:
+- `total_uses`: 全体使用件数
+- `active_users`: 活用人数
+- `total_views`: 全体閲覧回数
+- `use_count`: 個人使用回数
+- `view_count`: 個人閲覧回数
+- `xp_total`: 個人XP合計
+- `size_small_count`: 小サイズ使用回数
+- `size_mid_count`: 中サイズ使用回数
+- `size_large_count`: 大サイズ使用回数
+- `size_legend_count`: 特大サイズ使用回数
+
+---
+
+# ドキュメント完成
+
+本ドキュメントは、在庫管理クエストWebアプリのデータベース（Googleスプレッドシート）の実際の構造を記録したものです。
+
+**記録シート数**: 30シート
+
+**セクション構成**:
+1. システム設定（README, Config, Lookups）
+2. マスタデータ（Inventory, Locations, Attachments, Users）
+3. トランザクション（UsageLog, ChatThreads, ChatMessages）
+4. ルール定義（PointRules, BadgeRules, LevelRules）
+5. 期間管理（Periods, Goals）
+6. ダッシュボード（Dashboard_User, Dashboard_Ranking, Dashboard_UsageItems）
+7. ログ（ViewLog）
+8. マップ関連（Areas, Maps, Shelves, Bins）
+9. ゲーミフィケーション（Badges, UserBadges, CharacterProfiles）
+10. キャッシュ・集計（UserStatsCache）
+11. レポート（Report_Official）
+12. インポート（Import_Staging）
+
+**作成日**: 2026-01-04
