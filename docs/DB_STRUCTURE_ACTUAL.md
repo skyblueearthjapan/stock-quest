@@ -637,6 +637,181 @@ location_text: 本社_棚A-2-3
 
 ---
 
+## ViewLog シート（閲覧ログ：努力指標）
+
+**説明**: 閲覧ログ。同一在庫の短時間連続閲覧は集計時に除外。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| view_id* | ◯ | 主キー（例: V-0001） |
+| timestamp* | ◯ | 閲覧日時 |
+| user_id* | ◯ | ユーザーID |
+| inventory_id* | ◯ | 在庫ID |
+| period_id_cache | | 期間IDキャッシュ（集計高速化） |
+| session_id | | セッションID |
+| source_page | | 遷移元ページ（inventory_detail等） |
+| device | | デバイス（pc/mobile等） |
+| notes | | メモ |
+
+**サンプルデータ**:
+```
+view_id: V-0001
+timestamp: 2026-01-04 10:12
+user_id: U-001
+inventory_id: INV-00012
+period_id_cache: P-2026-01
+session_id: S-abc123
+source_page: inventory_detail
+device: pc
+notes: 同一在庫の短時間連続閲覧は集計時に除外
+```
+
+---
+
+## Goals シート（目標：共通/個人）
+
+**説明**: 共通目標→個人目標へ段階移行できる。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| goal_id* | ◯ | 主キー（例: G-2026-01-COMMON） |
+| period_id* | ◯ | 期間ID（Periods参照） |
+| goal_type* | ◯ | 目標タイプ（COMMON/PERSONAL） |
+| user_id | | ユーザーID（PERSONAL時のみ） |
+| target_level* | ◯ | 目標レベル |
+| is_active* | ◯ | 有効フラグ（1/0） |
+| notes | | メモ |
+| created_at | | 作成日時 |
+| created_by | | 作成者 |
+| updated_at | | 更新日時 |
+| updated_by | | 更新者 |
+
+**サンプルデータ**:
+```
+goal_id: G-2026-01-COMMON
+period_id: P-2026-01
+goal_type: COMMON
+target_level: 5
+is_active: 1
+notes: 導入期:全員共通
+created_at: 2026-01-04 09:00
+created_by: admin
+
+goal_id: G-2026-H1-COMMON
+period_id: P-2026-H1
+goal_type: COMMON
+target_level: 8
+is_active: 1
+notes: 半期の共通目標（例）
+
+goal_id: G-2026-01-U001
+period_id: P-2026-01
+goal_type: PERSONAL
+user_id: U-001
+target_level: 6
+is_active: 0
+notes: 個別目標は必要になったらON
+```
+
+**優先順位ルール**:
+1. PERSONAL（active）があればそれを採用
+2. なければ COMMON（active）を採用
+3. どちらもなければデフォルト（Configでfallback）
+
+---
+
+## Badges シート（称号バッジ：表示名と演出）
+
+**説明**: 称号バッジの表示名と演出。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| badge_id* | ◯ | 主キー（例: B-001） |
+| badge_name* | ◯ | バッジ名（称号） |
+| tier* | ◯ | ティア（Bronze/Silver/Gold/Legendary） |
+| icon_key | | アイコンキー |
+| short_copy | | 短いコピー |
+| description | | 説明文 |
+| is_active* | ◯ | 有効フラグ（1/0） |
+| updated_at | | 更新日時 |
+| updated_by | | 更新者 |
+
+**データ一覧**:
+
+| badge_id | badge_name | tier | icon_key | short_copy | description |
+|----------|-----------|------|----------|------------|-------------|
+| B-001 | 冒険開始の証 | Bronze | start | はじめの一歩 | 在庫を初めて使用した証。 |
+| B-002 | 丁寧なる使い手 | Bronze | small_master | 積み重ねの達人 | 小サイズの在庫をコツコツ活用した。 |
+| B-003 | 堅実なる設計者 | Silver | mid_solid | 堅実な判断 | 中サイズの在庫を活用できる判断力。 |
+| B-004 | 果敢なる挑戦者 | Gold | large_bold | 金の一手 | 大サイズを使いこなす果敢さ。 |
+| B-005 | 伝説の一手 | Legendary | legend | 別格の成果 | 特大在庫を活用し、在庫を前に進めた。 |
+| B-006 | 今月の功労者 | Silver | month_worker | 今月も前進 | 今月の使用が一定回数に到達。 |
+| B-007 | 万能型エンジニア | Gold | balanced | バランス型 | 小・中・大をバランス良く活用。 |
+| B-008 | 在庫活用の達人 | Gold | master | 信頼の実績 | 今期の使用回数が一定に到達。 |
+| B-009 | 知識を尊ぶ者 | Bronze | viewer | 見る力 | 在庫詳細を積極的に閲覧。 |
+| B-010 | 探究心の結晶 | Silver | researcher | 研究熱心 | 閲覧を継続し、学びを積み上げた。 |
+
+---
+
+## Areas シート（拠点・エリア定義）
+
+**説明**: 本社工場は2エリア、第二工場は1エリア想定。棚マップの上位階層。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| site_id* | ◯ | 拠点ID（例: SITE-HQ） |
+| site_name* | ◯ | 拠点名（例: 本社工場） |
+| area_id* | ◯ | エリアID（例: AREA-HQ-1） |
+| area_name* | ◯ | エリア名 |
+| sort_order | | 表示順 |
+| notes | | メモ |
+
+**データ一覧**:
+
+| site_id | site_name | area_id | area_name | sort_order | notes |
+|---------|-----------|---------|-----------|------------|-------|
+| SITE-HQ | 本社工場 | AREA-HQ-1 | 本社エリア1（手前） | 1 | 主要在庫エリア |
+| SITE-HQ | 本社工場 | AREA-HQ-2 | 本社エリア2（奥） | 2 | 奥の在庫エリア |
+| SITE-2F | 第二工場 | AREA-2F-1 | 第二工場エリア | 1 | 将来拡張用（在庫管理は主に本社） |
+
+---
+
+## Maps シート（棚マップ：上から/側面）
+
+**説明**: エリア単位で『上から見た棚配置(トップ)』と『側面図(サイド)』画像を管理。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| map_id* | ◯ | 主キー（例: MAP-HQ-1） |
+| site_id* | ◯ | 拠点ID（Areas参照） |
+| area_id* | ◯ | エリアID（Areas参照） |
+| top_image_fileId | | 上面図のDrive fileId |
+| side_image_fileId | | 側面図のDrive fileId |
+| version | | バージョン |
+| notes | | メモ |
+| updated_at | | 更新日時 |
+| updated_by | | 更新者 |
+
+**データ一覧**:
+
+| map_id | site_id | area_id | version | notes |
+|--------|---------|---------|---------|-------|
+| MAP-HQ-1 | SITE-HQ | AREA-HQ-1 | v1 | トップ/側面の画像をDriveに置いてfileIdを入力 |
+| MAP-HQ-2 | SITE-HQ | AREA-HQ-2 | v1 | |
+| MAP-2F-1 | SITE-2F | AREA-2F-1 | v1 | |
+
+---
+
 ## 以下、追加のスクリーンショットを受け取り次第追記
 
 （続きをお送りください）
