@@ -4,10 +4,43 @@
   <meta charset="utf-8">
   <base target="_top">
   <title>Inventory</title>
+  <?= include('assets_css'); ?>
 </head>
-<body style="font-family:system-ui; padding:20px;">
-  <h2>INVENTORY TEMPLATE OK</h2>
-  <pre><?= JSON.stringify(data, null, 2) ?></pre>
-  <p><a href="?page=ping">ping</a> / <a href="?page=login">login</a></p>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">在庫一覧（テスト）</div>
+      <div class="userbox">
+        ログイン中：<b><?= data.user.display_name ?></b>
+        （<?= data.user.role ?>）
+        <a class="link" href="?page=logout">ログアウト</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>静的UIテスト</h2>
+      <div>ここまで表示されていればCSS/HTMLはOK</div>
+      <div id="apiPing" style="margin-top:12px; font-family:monospace;">API呼び出し中...</div>
+    </div>
+
+    <div class="card">
+      <h3>data内容</h3>
+      <pre><?= JSON.stringify(data, null, 2) ?></pre>
+    </div>
+  </div>
+
+  <script>
+    const IS_GUEST = <?= (data.user && data.user.role === 'guest') ? 'true' : 'false' ?>;
+    window.addEventListener('load', () => {
+      google.script.run
+        .withSuccessHandler(res => {
+          document.getElementById('apiPing').textContent = 'API OK: ' + JSON.stringify(res);
+        })
+        .withFailureHandler(err => {
+          document.getElementById('apiPing').textContent = 'API ERROR: ' + (err && err.message ? err.message : JSON.stringify(err));
+        })
+        .api_ping();
+    });
+  </script>
 </body>
 </html>

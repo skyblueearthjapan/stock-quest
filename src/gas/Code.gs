@@ -97,6 +97,11 @@ function api_logout() {
   return { success: true };
 }
 
+// デバッグ用：JS→サーバー通信テスト
+function api_ping() {
+  return { ok: true, time: new Date().toISOString() };
+}
+
 // ========== 在庫関連API ==========
 
 function api_inventoryList(category, q, isGuest) {
