@@ -8,17 +8,27 @@ function doGet(e) {
       return render_('login', { message: 'ログアウトしました' });
     }
 
-    // homeはログイン必須にする（未ログインならloginを表示）
+    // homeはログイン後のデフォルトページへリダイレクト
     if (page === 'home') {
       const u = currentUser_();
       if (!u) return render_('login', { message: 'ログインしてください' });
-      let cfg = {};
-      try {
-        cfg = getConfigMap_();
-      } catch (configErr) {
-        cfg = { error: configErr.message };
-      }
-      return render_('home', { config: cfg });
+      // 在庫一覧へリダイレクト（form submit方式）
+      return render_('inventory', {});
+    }
+
+    // 在庫一覧
+    if (page === 'inventory') {
+      const u = currentUser_();
+      if (!u) return render_('login', { message: 'ログインしてください' });
+      return render_('inventory', {});
+    }
+
+    // 在庫詳細
+    if (page === 'inv_detail') {
+      const u = currentUser_();
+      if (!u) return render_('login', { message: 'ログインしてください' });
+      const id = (e.parameter && e.parameter.id) ? String(e.parameter.id) : '';
+      return render_('inventory_detail', { inventory_id: id });
     }
 
     // 未定義ルート
@@ -50,6 +60,24 @@ function api_guestLogin() {
 function api_logout() {
   logout_();
   return { success: true };
+}
+
+// ========== 在庫関連API ==========
+
+function api_inventoryList(category, q) {
+  requireLogin_();
+  return inventoryList_(category, q);
+}
+
+function api_inventoryDetail(inventoryId) {
+  requireLogin_();
+  return inventoryDetail_(inventoryId);
+}
+
+function api_useConfirm(payload) {
+  // guest禁止
+  requireRole_(['designer', 'stock_staff', 'admin']);
+  return useConfirm_(payload);
 }
 
 /**

@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('assets_css'); ?>
+</head>
+<body>
+<div class="container">
+  <div class="topbar">
+    <div class="brand"><?= data.appTitle ?></div>
+    <div class="userbox">
+      ログイン中：<b><?= data.user.display_name ?></b>
+      （<?= data.user.role ?><?= data.user.role === 'guest' ? ' / 閲覧のみ' : '' ?>）
+      <a class="link" href="?page=inventory">在庫一覧</a>
+      <a class="link" href="#" onclick="doLogout(); return false;">ログアウト</a>
+    </div>
+  </div>
+
+  <h1 class="title">在庫詳細</h1>
+
+  <div class="card" id="invCard">
+    読み込み中...
+  </div>
+
+  <div class="card">
+    <h3>添付（図面 / 写真 / CAD）</h3>
+    <div id="att">読み込み中...</div>
+  </div>
+
+  <? if (data.user.role !== 'guest') { ?>
+  <div class="card">
+    <h3>使用確定</h3>
+    <label>工番（例：LW25000）</label>
+    <input id="project" placeholder="LW25000">
+    <label>使用数量</label>
+    <input id="qty" inputmode="numeric" value="1">
+    <label>メモ（任意）</label>
+    <input id="note" placeholder="例：治具に使用">
+
+    <button class="btn" onclick="useConfirm()">使用確定（在庫を減らす）</button>
+    <div id="useMsg" class="msg"></div>
+  </div>
+  <? } ?>
+
+  <!-- ログアウト用フォーム -->
+  <form id="logoutForm" method="get" action="" style="display:none;">
+    <input type="hidden" name="page" value="login">
+  </form>
+</div>
+
+<?!= include('assets_js'); ?>
+<script>
+  const inventoryId = "<?= data.inventory_id ?>";
+  let inventory = null;
+
+  function doLogout() {
+    google.script.run.withSuccessHandler(function() {
+      document.getElementById('logoutForm').submit();
+    }).withFailureHandler(function() {
+      document.getElementById('logoutForm').submit();
+    }).api_logout();
+  }
+
+  function load(){
+    google.script.run.withSuccessHandler(res => {
+      inventory = res.inventory;
+
+      document.getElementById('invCard').innerHTML = `
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div style="width:80px; height:80px; border-radius:16px; border:1px solid var(--border);
+                      background:#f9fafb; display:flex; align-items:center; justify-content:center; font-weight:900; color:var(--muted);">
+            ${escapeHtml(inventory.size_class || '-')}
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:900; font-size:18px;">${escapeHtml(inventory.part_name)}</div>
+            <div style="color:var(--muted); margin-top:4px;">
+              ${escapeHtml(inventory.inventory_id)} / ${escapeHtml(inventory.category)}
+            </div>
+            <div style="margin-top:10px; font-weight:900;">在庫数：${inventory.qty}</div>
+            <div style="color:var(--muted); margin-top:6px;">${escapeHtml(inventory.notes || '')}</div>
+          </div>
+        </div>
+      `;
+
+      const att = document.getElementById('att');
+      att.innerHTML = '';
+      if (!res.attachments || res.attachments.length === 0){
+        att.innerHTML = '<div class="msg">添付はありません</div>';
+      } else {
+        res.attachments.forEach(a => {
+          const d = document.createElement('div');
+          d.className = 'card';
+          d.style.margin = '10px 0';
+          d.innerHTML = `
+            <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
+              <div>
+                <div style="font-weight:900;">${escapeHtml(a.type || 'file')}</div>
+                <div style="color:var(--muted); font-size:13px;">${escapeHtml(a.file_name || a.fileId)}</div>
+              </div>
+              <a class="link" target="_blank"
+                 href="https://drive.google.com/open?id=${encodeURIComponent(a.fileId)}">開く</a>
+            </div>
+          `;
+          att.appendChild(d);
+        });
+      }
+    }).withFailureHandler(err => {
+      document.getElementById('invCard').innerHTML = `エラー：${err.message || err}`;
+      document.getElementById('att').innerHTML = '';
+    }).api_inventoryDetail(inventoryId);
+  }
+
+  function useConfirm(){
+    const project = document.getElementById('project').value.trim();
+    const qty = Number(document.getElementById('qty').value || 1);
+    const note = document.getElementById('note').value.trim();
+    const msg = document.getElementById('useMsg');
+    msg.textContent = '処理中...';
+
+    google.script.run.withSuccessHandler(res => {
+      msg.textContent = `完了！ 在庫：${res.qty_after} / 付与XP：${res.points}`;
+      load(); // 再読み込み
+    }).withFailureHandler(err => {
+      msg.textContent = `失敗：${err.message || err}`;
+    }).api_useConfirm({ inventory_id: inventoryId, qty, project_code: project, note });
+  }
+
+  function escapeHtml(s){
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  load();
+</script>
+</body>
+</html>

@@ -13,4 +13,6 @@ const ENV = {
     USERS: 'Users',
     USER_AUTH: 'UserAuth', // 推奨。無い場合はUsersのpin_hashで代替
   },
+  DEFAULT_AFTER_LOGIN_PAGE: 'inventory', // homeの代わりに在庫一覧を入口にする
+  HDR_ROW: 3, // ヘッダー行（違えばここだけ変える）
 };
