@@ -31,10 +31,11 @@ function doGet(e) {
       return render_('login', data);
     }
 
-    // home → inventory へリダイレクト
+    // home → inventory へリダイレクト（baseUrl使用）
     if (page === 'home') {
+      const redirectUrl = data.baseUrl + '?page=inventory' + (data.guest ? '&guest=1' : '') + '&t=' + Date.now();
       return HtmlService.createHtmlOutput(
-        '<meta http-equiv="refresh" content="0;url=?page=inventory' + (data.guest ? '&guest=1' : '') + '">' +
+        '<meta http-equiv="refresh" content="0;url=' + redirectUrl + '">' +
         '<div style="font-family:system-ui;padding:16px;">Redirecting...</div>'
       );
     }
