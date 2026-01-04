@@ -1,8 +1,37 @@
 <!doctype html>
 <html>
 <head>
+  <meta charset="utf-8">
   <base target="_top">
+  <title><?= data.appTitle ?> - 在庫詳細</title>
   <?!= include('assets_css'); ?>
+  <style>
+    .back-link { display:inline-flex; align-items:center; gap:6px; color:var(--accent); font-weight:700; text-decoration:none; margin-bottom:12px; }
+    .back-link:hover { text-decoration:underline; }
+    .detail-header { display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap; }
+    .detail-thumb { width:100px; height:100px; border-radius:16px; border:1px solid var(--border); background:#f9fafb; display:flex; align-items:center; justify-content:center; font-weight:900; color:var(--muted); font-size:16px; overflow:hidden; flex-shrink:0; }
+    .detail-thumb img { width:100%; height:100%; object-fit:cover; }
+    .detail-info { flex:1; min-width:200px; }
+    .detail-name { font-weight:900; font-size:20px; margin-bottom:6px; }
+    .detail-meta { color:var(--muted); font-size:14px; margin-bottom:8px; }
+    .detail-qty { font-size:18px; font-weight:700; color:var(--accent); }
+    .detail-notes { color:var(--muted); font-size:14px; margin-top:10px; white-space:pre-wrap; }
+    .section-title { font-weight:800; font-size:16px; margin:0 0 12px; color:var(--text); }
+    .att-item { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
+    .att-item:last-child { border-bottom:none; }
+    .att-type { font-weight:700; font-size:14px; }
+    .att-name { color:var(--muted); font-size:13px; margin-top:2px; word-break:break-all; }
+    .att-link { color:var(--accent); font-weight:700; text-decoration:none; white-space:nowrap; }
+    .att-link:hover { text-decoration:underline; }
+    .use-form label { margin-top:14px; }
+    .use-form input:first-of-type { margin-top:0; }
+    .success-msg { background:#ecfdf5; border:1px solid #6ee7b7; border-radius:8px; padding:12px 16px; margin-top:12px; color:#047857; font-weight:600; }
+    .xp-badge { display:inline-block; background:var(--accent); color:#fff; padding:4px 10px; border-radius:999px; font-weight:700; font-size:13px; margin-left:8px; }
+    @media (max-width:500px) {
+      .detail-header { flex-direction:column; align-items:center; text-align:center; }
+      .detail-info { text-align:center; }
+    }
+  </style>
 </head>
 <body>
 <div class="container">
@@ -11,113 +40,171 @@
     <div class="userbox">
       ログイン中：<b><?= data.user.display_name ?></b>
       （<?= data.user.role ?><?= data.user.role === 'guest' ? ' / 閲覧のみ' : '' ?>）
-      <a class="link" href="?page=inventory<?= data.guest ? '&guest=1' : '' ?>">在庫一覧</a>
-      <a class="link" href="?page=logout">ログアウト</a>
+      <a class="link" href="<?= data.baseUrl ?>?page=logout">ログアウト</a>
     </div>
   </div>
+
+  <a class="back-link" href="<?= data.baseUrl ?>?page=inventory<?= data.guest ? '&guest=1' : '' ?>">← 在庫一覧に戻る</a>
 
   <h1 class="title">在庫詳細</h1>
 
   <div class="card" id="invCard">
-    読み込み中...
+    <div class="loading">読み込み中...</div>
   </div>
 
   <div class="card">
-    <h3>添付（図面 / 写真 / CAD）</h3>
-    <div id="att">読み込み中...</div>
+    <div class="section-title">添付ファイル（図面 / 写真 / CAD）</div>
+    <div id="att"><div class="loading">読み込み中...</div></div>
   </div>
 
   <? if (data.user.role !== 'guest') { ?>
-  <div class="card">
-    <h3>使用確定</h3>
-    <label>工番（例：LW25000）</label>
+  <div class="card use-form">
+    <div class="section-title">使用確定</div>
+    <p style="color:var(--muted); font-size:13px; margin:0 0 12px;">在庫を減らしてポイントを獲得します</p>
+
+    <label>工番（例：LW25000）<span style="color:#dc2626;">*</span></label>
     <input id="project" placeholder="LW25000">
-    <label>使用数量</label>
-    <input id="qty" inputmode="numeric" value="1">
+
+    <label>使用数量 <span style="color:#dc2626;">*</span></label>
+    <input id="qty" type="number" inputmode="numeric" min="1" value="1">
+
     <label>メモ（任意）</label>
     <input id="note" placeholder="例：治具に使用">
 
     <button class="btn" onclick="useConfirm()">使用確定（在庫を減らす）</button>
     <div id="useMsg" class="msg"></div>
   </div>
+  <? } else { ?>
+  <div class="card" style="background:var(--accentSoft); border-color:var(--accent);">
+    <div style="color:var(--accent2); font-weight:600;">ゲストモードでは「使用確定」はできません。ログインしてください。</div>
+  </div>
   <? } ?>
 </div>
 
 <?!= include('assets_js'); ?>
 <script>
+  const BASE_URL = "<?= data.baseUrl ?>";
   const inventoryId = "<?= data.inventory_id ?>";
   const IS_GUEST = <?= (data.user && data.user.role === 'guest') ? 'true' : 'false' ?>;
   let inventory = null;
 
-  function load(){
+  function load() {
     google.script.run.withSuccessHandler(res => {
       inventory = res.inventory;
 
+      // サムネイル生成
+      let thumbContent = escapeHtml(inventory.size_class || '-');
+      if (inventory.primary_image_fileId) {
+        thumbContent = '<img src="https://drive.google.com/thumbnail?id=' + escapeHtml(inventory.primary_image_fileId) + '&sz=w200" onerror="this.parentElement.textContent=\'' + escapeHtml(inventory.size_class || '-') + '\'">';
+      }
+
+      // 在庫状態の表示
+      const statusBadge = inventory.status && inventory.status !== 'active'
+        ? '<span style="background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:600; margin-left:8px;">' + escapeHtml(inventory.status) + '</span>'
+        : '';
+
       document.getElementById('invCard').innerHTML = `
-        <div style="display:flex; gap:14px; align-items:flex-start;">
-          <div style="width:80px; height:80px; border-radius:16px; border:1px solid var(--border);
-                      background:#f9fafb; display:flex; align-items:center; justify-content:center; font-weight:900; color:var(--muted);">
-            ${escapeHtml(inventory.size_class || '-')}
-          </div>
-          <div style="flex:1;">
-            <div style="font-weight:900; font-size:18px;">${escapeHtml(inventory.part_name)}</div>
-            <div style="color:var(--muted); margin-top:4px;">
-              ${escapeHtml(inventory.inventory_id)} / ${escapeHtml(inventory.category)}
+        <div class="detail-header">
+          <div class="detail-thumb">${thumbContent}</div>
+          <div class="detail-info">
+            <div class="detail-name">${escapeHtml(inventory.part_name)}${statusBadge}</div>
+            <div class="detail-meta">
+              ID：${escapeHtml(inventory.inventory_id)} ／ カテゴリ：${escapeHtml(inventory.category)} ／ サイズ：${escapeHtml(inventory.size_class || '-')}
             </div>
-            <div style="margin-top:10px; font-weight:900;">在庫数：${inventory.qty}</div>
-            <div style="color:var(--muted); margin-top:6px;">${escapeHtml(inventory.notes || '')}</div>
+            <div class="detail-qty">在庫数：${inventory.qty}</div>
+            ${inventory.notes ? '<div class="detail-notes">' + escapeHtml(inventory.notes) + '</div>' : ''}
           </div>
         </div>
       `;
 
+      // 添付ファイル
       const att = document.getElementById('att');
       att.innerHTML = '';
-      if (!res.attachments || res.attachments.length === 0){
-        att.innerHTML = '<div class="msg">添付はありません</div>';
+
+      if (!res.attachments || res.attachments.length === 0) {
+        att.innerHTML = '<div style="color:var(--muted); padding:8px 0;">添付ファイルはありません</div>';
       } else {
         res.attachments.forEach(a => {
-          const d = document.createElement('div');
-          d.className = 'card';
-          d.style.margin = '10px 0';
-          d.innerHTML = `
-            <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
-              <div>
-                <div style="font-weight:900;">${escapeHtml(a.type || 'file')}</div>
-                <div style="color:var(--muted); font-size:13px;">${escapeHtml(a.file_name || a.fileId)}</div>
-              </div>
-              <a class="link" target="_blank"
-                 href="https://drive.google.com/open?id=${encodeURIComponent(a.fileId)}">開く</a>
+          const item = document.createElement('div');
+          item.className = 'att-item';
+
+          // ファイルタイプアイコン
+          const typeIcon = getTypeIcon(a.type);
+
+          item.innerHTML = `
+            <div style="flex:1; min-width:0;">
+              <div class="att-type">${typeIcon} ${escapeHtml(a.type || 'ファイル')}</div>
+              <div class="att-name">${escapeHtml(a.file_name || a.fileId)}</div>
             </div>
+            <a class="att-link" target="_blank" href="https://drive.google.com/open?id=${encodeURIComponent(a.fileId)}">開く →</a>
           `;
-          att.appendChild(d);
+          att.appendChild(item);
         });
       }
     }).withFailureHandler(err => {
-      document.getElementById('invCard').innerHTML = `エラー：${err.message || err}`;
+      document.getElementById('invCard').innerHTML = '<div class="error-msg">エラー：' + escapeHtml(err.message || String(err)) + '</div>';
       document.getElementById('att').innerHTML = '';
     }).api_inventoryDetail(inventoryId, IS_GUEST);
   }
 
-  function useConfirm(){
+  function getTypeIcon(type) {
+    const t = String(type || '').toLowerCase();
+    if (t.includes('図面') || t.includes('dwg') || t.includes('cad')) return '📐';
+    if (t.includes('写真') || t.includes('photo') || t.includes('image')) return '📷';
+    if (t.includes('pdf')) return '📄';
+    if (t.includes('excel') || t.includes('xlsx')) return '📊';
+    return '📎';
+  }
+
+  function useConfirm() {
     const project = document.getElementById('project').value.trim();
     const qty = Number(document.getElementById('qty').value || 1);
     const note = document.getElementById('note').value.trim();
-    const msg = document.getElementById('useMsg');
-    msg.textContent = '処理中...';
+    const msgEl = document.getElementById('useMsg');
+
+    // バリデーション
+    if (!project) {
+      msgEl.className = 'error-msg';
+      msgEl.textContent = '工番を入力してください';
+      return;
+    }
+    if (!qty || qty < 1) {
+      msgEl.className = 'error-msg';
+      msgEl.textContent = '使用数量は1以上を入力してください';
+      return;
+    }
+    if (inventory && qty > inventory.qty) {
+      msgEl.className = 'error-msg';
+      msgEl.textContent = '在庫数を超えています（現在：' + inventory.qty + '）';
+      return;
+    }
+
+    msgEl.className = 'msg';
+    msgEl.textContent = '処理中...';
 
     google.script.run.withSuccessHandler(res => {
-      msg.textContent = `完了！ 在庫：${res.qty_after} / 付与XP：${res.points}`;
-      load(); // 再読み込み
+      msgEl.className = 'success-msg';
+      msgEl.innerHTML = '使用確定完了！ 残り在庫：<b>' + res.qty_after + '</b><span class="xp-badge">+' + res.points + ' XP</span>';
+
+      // フォームリセット
+      document.getElementById('project').value = '';
+      document.getElementById('qty').value = '1';
+      document.getElementById('note').value = '';
+
+      // 在庫情報を再読み込み
+      load();
     }).withFailureHandler(err => {
-      msg.textContent = `失敗：${err.message || err}`;
+      msgEl.className = 'error-msg';
+      msgEl.textContent = '失敗：' + (err.message || String(err));
     }).api_useConfirm({ inventory_id: inventoryId, qty, project_code: project, note });
   }
 
-  function escapeHtml(s){
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  // 初期ロード
   load();
 </script>
 </body>

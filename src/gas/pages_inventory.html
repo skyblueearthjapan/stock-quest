@@ -3,46 +3,172 @@
 <head>
   <meta charset="utf-8">
   <base target="_top">
-  <title>Inventory</title>
+  <title><?= data.appTitle ?> - 在庫一覧</title>
   <?!= include('assets_css'); ?>
+  <style>
+    .search-bar { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+    .search-bar .field { flex:1; min-width:200px; }
+    .search-bar .field label { margin-top:0; }
+    .tabs { display:flex; gap:8px; flex-wrap:wrap; margin:16px 0; }
+    .tab { padding:8px 16px; border-radius:999px; border:1px solid var(--border); background:#fff; cursor:pointer; font-weight:600; transition:all .15s; }
+    .tab:hover { border-color:var(--accent); }
+    .tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px; }
+    .item-card { cursor:pointer; transition:box-shadow .15s, transform .15s; }
+    .item-card:hover { box-shadow:0 12px 32px rgba(17,24,39,.12); transform:translateY(-2px); }
+    .item-thumb { width:64px; height:64px; border-radius:12px; border:1px solid var(--border); background:#f9fafb; display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--muted); font-size:14px; overflow:hidden; }
+    .item-thumb img { width:100%; height:100%; object-fit:cover; }
+    .item-info { flex:1; min-width:0; }
+    .item-name { font-weight:800; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .item-meta { color:var(--muted); font-size:13px; margin-top:4px; }
+    .item-qty { font-weight:700; color:var(--accent); }
+    .item-arrow { color:var(--accent); font-weight:900; font-size:18px; }
+    .empty-state { text-align:center; padding:40px 20px; color:var(--muted); }
+    .loading { text-align:center; padding:40px 20px; color:var(--muted); }
+    @media (max-width:600px) {
+      .grid { grid-template-columns:1fr; }
+      .tabs { gap:6px; }
+      .tab { padding:6px 12px; font-size:13px; }
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <div class="topbar">
-      <div class="brand">在庫一覧（テスト）</div>
+      <div class="brand"><?= data.appTitle ?></div>
       <div class="userbox">
         ログイン中：<b><?= data.user.display_name ?></b>
-        （<?= data.user.role ?>）
+        （<?= data.user.role ?><?= data.user.role === 'guest' ? ' / 閲覧のみ' : '' ?>）
         <a class="link" href="<?= data.baseUrl ?>?page=logout">ログアウト</a>
       </div>
     </div>
 
-    <div class="card">
-      <h2>静的UIテスト</h2>
-      <div>ここまで表示されていればCSS/HTMLはOK</div>
-      <div id="apiPing" style="margin-top:12px; font-family:monospace;">API呼び出し中...</div>
-    </div>
+    <h1 class="title">在庫一覧</h1>
 
     <div class="card">
-      <h3>data内容</h3>
-      <pre><?= JSON.stringify(data, null, 2) ?></pre>
+      <div class="search-bar">
+        <div class="field">
+          <label>検索（在庫ID / 部品名）</label>
+          <input id="searchQ" type="text" placeholder="例：INV-001 / ベアリング" onkeydown="if(event.key==='Enter')doSearch()">
+        </div>
+        <button class="btn" onclick="doSearch()" style="margin-top:0;">検索</button>
+      </div>
+    </div>
+
+    <div id="tabs" class="tabs">
+      <div class="tab active" data-cat="">すべて</div>
+    </div>
+
+    <div id="listArea">
+      <div class="loading">読み込み中...</div>
     </div>
   </div>
 
+  <?!= include('assets_js'); ?>
   <script>
     const BASE_URL = "<?= data.baseUrl ?>";
     const IS_GUEST = <?= (data.user && data.user.role === 'guest') ? 'true' : 'false' ?>;
 
-    window.addEventListener('load', () => {
+    let categories = [];
+    let currentCat = '';
+
+    function renderTabs() {
+      const el = document.getElementById('tabs');
+      el.innerHTML = '';
+
+      // "すべて" タブ
+      const allTab = document.createElement('div');
+      allTab.className = 'tab' + (currentCat === '' ? ' active' : '');
+      allTab.textContent = 'すべて';
+      allTab.onclick = () => { currentCat = ''; renderTabs(); doSearch(); };
+      el.appendChild(allTab);
+
+      // カテゴリタブ
+      categories.forEach(cat => {
+        const t = document.createElement('div');
+        t.className = 'tab' + (currentCat === cat ? ' active' : '');
+        t.textContent = cat;
+        t.onclick = () => { currentCat = cat; renderTabs(); doSearch(); };
+        el.appendChild(t);
+      });
+    }
+
+    function doSearch() {
+      const q = document.getElementById('searchQ').value.trim();
+      const area = document.getElementById('listArea');
+      area.innerHTML = '<div class="loading">読み込み中...</div>';
+
       google.script.run
         .withSuccessHandler(res => {
-          document.getElementById('apiPing').textContent = 'API OK: ' + JSON.stringify(res);
+          // カテゴリ更新
+          if (res.categories && res.categories.length > 0) {
+            categories = res.categories;
+            renderTabs();
+          }
+
+          renderItems(res.items || []);
         })
         .withFailureHandler(err => {
-          document.getElementById('apiPing').textContent = 'API ERROR: ' + (err && err.message ? err.message : JSON.stringify(err));
+          area.innerHTML = '<div class="error-msg">エラー: ' + escapeHtml(err.message || String(err)) + '</div>';
         })
-        .api_ping();
-    });
+        .api_inventoryList(currentCat, q, IS_GUEST);
+    }
+
+    function renderItems(items) {
+      const area = document.getElementById('listArea');
+
+      if (items.length === 0) {
+        area.innerHTML = '<div class="empty-state">該当する在庫がありません</div>';
+        return;
+      }
+
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card item-card';
+        card.style.margin = '0';
+
+        // ゲストパラメータを引き継ぐ
+        const guestParam = IS_GUEST ? '&guest=1' : '';
+        card.onclick = () => {
+          window.location.href = BASE_URL + '?page=inv_detail&id=' + encodeURIComponent(item.inventory_id) + guestParam;
+        };
+
+        // サムネイル
+        let thumbContent = item.size_class || '-';
+        if (item.primary_image_fileId) {
+          thumbContent = '<img src="https://drive.google.com/thumbnail?id=' + escapeHtml(item.primary_image_fileId) + '&sz=w128" onerror="this.parentElement.textContent=\'' + escapeHtml(item.size_class || '-') + '\'">';
+        }
+
+        card.innerHTML =
+          '<div style="display:flex; gap:14px; align-items:center;">' +
+            '<div class="item-thumb">' + thumbContent + '</div>' +
+            '<div class="item-info">' +
+              '<div class="item-name">' + escapeHtml(item.part_name) + '</div>' +
+              '<div class="item-meta">' +
+                escapeHtml(item.inventory_id) + ' / ' + escapeHtml(item.category) +
+              '</div>' +
+              '<div class="item-meta">在庫：<span class="item-qty">' + item.qty + '</span></div>' +
+            '</div>' +
+            '<div class="item-arrow">→</div>' +
+          '</div>';
+
+        grid.appendChild(card);
+      });
+
+      area.innerHTML = '';
+      area.appendChild(grid);
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    // 初期ロード
+    doSearch();
   </script>
 </body>
 </html>
