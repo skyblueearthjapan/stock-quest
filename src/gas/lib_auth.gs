@@ -95,3 +95,35 @@ function searchUserCandidates_(q) {
       role: String(u['role'] || ''),
     }));
 }
+
+/**
+ * ゲストログイン（閲覧のみ）
+ */
+function guestLogin_() {
+  const p = session_();
+  p.setProperty(ENV.SESSION_KEYS.userId, 'GUEST');
+  p.setProperty(ENV.SESSION_KEYS.role, 'guest');
+  p.setProperty(ENV.SESSION_KEYS.displayName, 'ゲスト');
+  return currentUser_();
+}
+
+/**
+ * 権限チェック（許可されたロールのみ通過）
+ * @param {string[]} allowedRoles - 許可するロールの配列
+ * @returns {Object} 現在のユーザー
+ * @throws {Error} 未ログインまたは権限なしの場合
+ */
+function requireRole_(allowedRoles) {
+  const u = currentUser_();
+  if (!u) throw new Error('NOT_LOGGED_IN');
+  const role = String(u.role || '');
+  if (!allowedRoles.includes(role)) throw new Error('FORBIDDEN');
+  return u;
+}
+
+/**
+ * ゲストを除く権限チェック（使用確定、チャット投稿等で使用）
+ */
+function requireNonGuest_() {
+  return requireRole_(['designer', 'stock_staff', 'admin']);
+}

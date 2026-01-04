@@ -9,7 +9,7 @@
       <div class="topbar">
         <div class="brand"><?= data.appTitle ?></div>
         <div class="userbox">
-          ログイン中：<b><?= data.user.display_name ?></b>（<?= data.user.role ?>）
+          ログイン中：<b><?= data.user.display_name ?></b>（<?= data.user.role ?><?= data.user.role === 'guest' ? ' / 閲覧のみ' : '' ?>）
           <a class="link" href="?page=logout">ログアウト</a>
         </div>
       </div>
@@ -17,6 +17,9 @@
       <div class="card">
         <h2>フェーズ0〜1：起動確認</h2>
         <p>ここが表示されていれば、ルーティング・セッション・Spreadsheet接続が成功しています。</p>
+        <? if (data.user.role === 'guest') { ?>
+          <div class="info-msg">ゲストモードです。閲覧のみ可能です。使用確定やチャット投稿にはログインが必要です。</div>
+        <? } ?>
         <h3>Config（一部）</h3>
         <pre><?!= JSON.stringify(data.config, null, 2) ?></pre>
       </div>

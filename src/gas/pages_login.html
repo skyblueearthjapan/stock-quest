@@ -21,6 +21,7 @@
         <input id="pin" type="password" inputmode="numeric" maxlength="4" />
 
         <button class="btn" onclick="login()">ログイン</button>
+        <button class="btnSub" onclick="guestLogin()">ゲストで入る（閲覧のみ）</button>
         <div id="msg" class="msg"></div>
       </div>
     </div>
@@ -60,6 +61,16 @@
         }).withFailureHandler(err => {
           msg.textContent = `ログイン失敗：${err.message || err}`;
         }).api_login(name, pin);
+      }
+
+      function guestLogin() {
+        const msg = document.getElementById('msg');
+        msg.textContent = "ゲストで入室中...";
+        google.script.run.withSuccessHandler(() => {
+          location.href = '?page=home';
+        }).withFailureHandler(err => {
+          msg.textContent = `失敗：${err.message || err}`;
+        }).api_guestLogin();
       }
     </script>
   </body>
