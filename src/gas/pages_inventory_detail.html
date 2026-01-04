@@ -44,7 +44,7 @@
     </div>
   </div>
 
-  <a class="back-link" href="<?= data.baseUrl ?>?page=inventory<?= data.guest ? '&guest=1' : '' ?>">← 在庫一覧に戻る</a>
+  <a id="backToList" class="back-link" href="#">← 在庫一覧に戻る</a>
 
   <h1 class="title">在庫詳細</h1>
 
@@ -87,6 +87,18 @@
   const inventoryId = "<?= data.inventory_id ?>";
   const IS_GUEST = <?= (data.user && data.user.role === 'guest') ? 'true' : 'false' ?>;
   let inventory = null;
+
+  // 戻るリンクを「必ず正しいURL」で生成（二重エンコード防止）
+  (function bindBackLink(){
+    const a = document.getElementById('backToList');
+    if (!a) return;
+    // BASE_URL がもし "?page=..." を含んでいても、強制的に /exec だけに正規化
+    const base = BASE_URL.split('?')[0];
+    const url = new URL(base);
+    url.searchParams.set('page', 'inventory');
+    if (IS_GUEST) url.searchParams.set('guest', '1');
+    a.href = url.toString();
+  })();
 
   function load() {
     google.script.run.withSuccessHandler(res => {
