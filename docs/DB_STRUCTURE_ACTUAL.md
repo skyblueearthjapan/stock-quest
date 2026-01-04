@@ -266,6 +266,202 @@ updated_by: admin
 
 ---
 
+## UsageLog シート（利用ログ）
+
+**説明**: 閲覧/使用確定/添付閲覧/ログイン等。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| log_id* | ◯ | 主キー（例: LOG-000001） |
+| timestamp* | ◯ | 日時 |
+| user_id* | ◯ | ユーザーID（Users参照） |
+| action* | ◯ | 操作種別（view_detail/use_confirmed等） |
+| inventory_id | | 在庫ID（Inventory参照） |
+| attachment_id | | 添付ID（Attachments参照） |
+| project_code | | 工番（LW25000等） |
+| qty_delta | | 数量増減（使用時はマイナス） |
+| points | | 付与XP（確定値、不変） |
+| client | | クライアント（web等） |
+| notes | | メモ |
+
+**サンプルデータ**:
+```
+log_id: LOG-000001
+timestamp: 2026-01-01 10:10
+user_id: U-001
+action: view_detail
+inventory_id: INV-000001
+qty_delta: 0
+points: 0
+client: web
+
+log_id: LOG-000002
+timestamp: 2026-01-01 10:12
+user_id: U-001
+action: use_confirmed
+inventory_id: INV-000001
+project_code: LW25000
+qty_delta: -1
+points: 3
+client: web
+notes: 設計で使用
+```
+
+---
+
+## ChatThreads シート（チャット状態）
+
+**説明**: 未完了/進行中の拾い上げ用。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| inventory_id* | ◯ | 主キー（在庫1件＝スレッド1件） |
+| thread_status* | ◯ | ステータス（Open/InProgress/Done/OnHold） |
+| related_project | | 関連工番 |
+| assigned_staff_user_id | | 担当在庫スタッフのuser_id |
+| last_message_at | | 最終メッセージ日時 |
+| last_message_by | | 最終メッセージ送信者 |
+| unread_for_staff | | スタッフ未読数 |
+| unread_for_requester | | 依頼者未読数 |
+| notes | | メモ |
+
+**サンプルデータ**:
+```
+inventory_id: INV-000001
+thread_status: Open
+related_project: LW25000
+assigned_staff_user_id: U-002
+last_message_at: 2026-01-01 10:15
+last_message_by: U-001
+unread_for_staff: 1
+unread_for_requester: 0
+notes: 移動依頼あり
+```
+
+---
+
+## ChatMessages シート（チャット本文）
+
+**説明**: 在庫詳細内で継続する会話。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| message_id* | ◯ | 主キー（例: MSG-000001） |
+| inventory_id* | ◯ | 在庫ID（Inventory参照） |
+| created_at* | ◯ | 送信日時 |
+| sender_user_id* | ◯ | 送信者user_id |
+| sender_role* | ◯ | 送信者ロール（designer/stock_manager） |
+| message_text* | ◯ | メッセージ本文 |
+| attachment_fileId | | 添付ファイルのDrive fileId |
+| attachment_name | | 添付ファイル名 |
+| is_system | | システムメッセージフラグ（TRUE/FALSE） |
+| notes | | メモ |
+
+**サンプルデータ**:
+```
+message_id: MSG-000001
+inventory_id: INV-000001
+created_at: 2026-01-01 10:15
+sender_user_id: U-001
+sender_role: designer
+message_text: LW25000で使用したいです。第2工場にある場合、本社へ移動お願いします。
+is_system: FALSE
+
+message_id: MSG-000002
+inventory_id: INV-000001
+created_at: 2026-01-01 10:20
+sender_user_id: U-002
+sender_role: stock_manager
+message_text: 了解です。移動手配します。完了したら連絡します。
+is_system: FALSE
+```
+
+---
+
+## PointRules シート（ポイント付与）
+
+**説明**: サイズ/レア度などのルール。アプリが参照して use_confirmed の points を計算。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| rule_id* | ◯ | 主キー（例: PR-001） |
+| size_class | | サイズ区分（小/中/大/特大） |
+| rarity | | レア度（Bronze/Silver/Gold/Legendary） |
+| mode* | ◯ | モード（use_confirm/view） |
+| points* | ◯ | 付与ポイント |
+| notes | | 説明メモ |
+| updated_at | | 更新日時 |
+| updated_by | | 更新者 |
+
+**データ一覧**:
+
+| rule_id | size_class | rarity | mode | points | notes |
+|---------|-----------|--------|------|--------|-------|
+| PR-001 | 小 | Bronze | use_confirm | 1 | 小サイズ：+1XP |
+| PR-002 | 中 | Silver | use_confirm | 2 | 中サイズ：+2XP |
+| PR-003 | 大 | Gold | use_confirm | 3 | 大サイズ：+3XP（強めに評価） |
+| PR-004 | 特大 | Legendary | use_confirm | 5 | 特大：+5XP（在庫担当が指定するレア） |
+| PR-005 | | | view | 0 | 閲覧はXP付与しない（努力指標としてログのみ） |
+
+---
+
+## BadgeRules シート（バッジ条件）
+
+**説明**: 集計時に判定して付与。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| badge_id* | ◯ | 主キー（例: B-001） |
+| badge_name* | ◯ | バッジ名（称号） |
+| condition_type* | ◯ | 条件種別 |
+| threshold* | ◯ | 閾値 |
+| （単位） | | 単位（回/セット） |
+| period_scope | | 期間スコープ（ANY/MONTH/H1H2） |
+| description | | 説明 |
+| updated_at | | 更新日時 |
+| updated_by | | 更新者 |
+
+**データ一覧**:
+
+| badge_id | badge_name | condition_type | threshold | 単位 | period_scope | description |
+|----------|-----------|----------------|-----------|-----|--------------|-------------|
+| B-001 | 冒険開始の証 | use_count | 1 | 回 | ANY | 初めて在庫を使用 |
+| B-002 | 丁寧なる使い手 | use_size_count_small | 5 | 回 | MONTH | 小を5回使用（今月） |
+| B-003 | 堅実なる設計者 | use_size_count_mid | 3 | 回 | MONTH | 中を3回使用（今月） |
+| B-004 | 果敢なる挑戦者 | use_size_count_large | 1 | 回 | MONTH | 大を1回使用（今月） |
+| B-005 | 伝説の一手 | use_size_count_legend | 1 | 回 | MONTH | 特大を1回使用（今月） |
+| B-006 | 今月の功労者 | use_count | 3 | 回 | MONTH | 今月の使用3回 |
+| B-007 | 万能型エンジニア | use_balanced_sml | 1 | セット | MONTH | 小/中/大を各1回以上（今月） |
+| B-008 | 在庫活用の達人 | use_count | 10 | 回 | H1H2 | 半期で使用10回 |
+| B-009 | 知識を尊ぶ者 | view_count | 30 | 回 | MONTH | 在庫詳細を30回閲覧（今月） |
+| B-010 | 探究心の結晶 | view_count | 100 | 回 | H1H2 | 半期で閲覧100回 |
+
+**condition_type 一覧**:
+- `use_count`: 使用回数
+- `use_size_count_small`: 小サイズ使用回数
+- `use_size_count_mid`: 中サイズ使用回数
+- `use_size_count_large`: 大サイズ使用回数
+- `use_size_count_legend`: 特大サイズ使用回数
+- `use_balanced_sml`: 小/中/大をバランスよく使用
+- `view_count`: 閲覧回数
+
+**period_scope 一覧**:
+- `ANY`: 累計（期間制限なし）
+- `MONTH`: 月単位
+- `H1H2`: 半期単位
+
+---
+
 ## 以下、追加のスクリーンショットを受け取り次第追記
 
 （続きをお送りください）
