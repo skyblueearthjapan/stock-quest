@@ -12,7 +12,12 @@ function doGet(e) {
     if (page === 'home') {
       const u = currentUser_();
       if (!u) return render_('login', { message: 'ログインしてください' });
-      const cfg = getConfigMap_();
+      let cfg = {};
+      try {
+        cfg = getConfigMap_();
+      } catch (configErr) {
+        cfg = { error: configErr.message };
+      }
       return render_('home', { config: cfg });
     }
 

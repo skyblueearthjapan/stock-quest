@@ -21,7 +21,7 @@
           <div class="info-msg">ゲストモードです。閲覧のみ可能です。使用確定やチャット投稿にはログインが必要です。</div>
         <? } ?>
         <h3>Config（一部）</h3>
-        <pre><?!= JSON.stringify(data.config, null, 2) ?></pre>
+        <pre><?!= JSON.stringify(data.config || {}, null, 2) ?></pre>
       </div>
 
       <div class="card">
