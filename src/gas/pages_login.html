@@ -29,16 +29,13 @@
         <button class="btn" onclick="login()">ログイン</button>
         <button class="btnSub" onclick="guestLogin()">ゲストで入る（閲覧のみ）</button>
         <div id="msg" class="msg"></div>
-
-        <!-- リダイレクト用の隠しフォーム -->
-        <form id="redirectForm" method="get" action="" style="display:none;">
-          <input type="hidden" name="page" value="home">
-        </form>
       </div>
     </div>
 
     <?!= include('assets_js'); ?>
     <script>
+      // ★重要：サーバーから渡された /exec のURL（userCodeAppPanel回避）
+      const BASE_URL = "<?= data.baseUrl ?>";
       let selectedName = "";
 
       function onSearch() {
@@ -60,10 +57,6 @@
         }).api_searchUsers(q);
       }
 
-      function goToHome() {
-        document.getElementById('redirectForm').submit();
-      }
-
       function login() {
         const name = document.getElementById('name').value.trim();
         const pin = document.getElementById('pin').value.trim();
@@ -72,18 +65,16 @@
 
         google.script.run.withSuccessHandler(user => {
           msg.textContent = `ようこそ ${user.display_name} さん`;
-          goToHome();
+          // ログイン成功 → inventory へ（baseUrl使用）
+          window.location.href = `${BASE_URL}?page=inventory&t=${Date.now()}`;
         }).withFailureHandler(err => {
           msg.textContent = `ログイン失敗：${err.message || err}`;
         }).api_login(name, pin);
       }
 
       function guestLogin() {
-        // 絶対URLで遷移（iframe/相対URL事故を防ぐ）
-        const url = new URL(window.location.href);
-        url.searchParams.set('page', 'inventory');
-        url.searchParams.set('guest', '1');
-        window.top.location.href = url.toString();
+        // ★baseURLで遷移（userCodeAppPanelに飛ばさない）
+        window.location.href = `${BASE_URL}?page=inventory&guest=1&t=${Date.now()}`;
       }
     </script>
   </body>

@@ -13,7 +13,7 @@
       <div class="userbox">
         ログイン中：<b><?= data.user.display_name ?></b>
         （<?= data.user.role ?>）
-        <a class="link" href="?page=logout">ログアウト</a>
+        <a class="link" href="<?= data.baseUrl ?>?page=logout">ログアウト</a>
       </div>
     </div>
 
@@ -30,7 +30,9 @@
   </div>
 
   <script>
+    const BASE_URL = "<?= data.baseUrl ?>";
     const IS_GUEST = <?= (data.user && data.user.role === 'guest') ? 'true' : 'false' ?>;
+
     window.addEventListener('load', () => {
       google.script.run
         .withSuccessHandler(res => {

@@ -65,6 +65,7 @@ function buildData_(e) {
 
   return {
     appTitle: ENV.APP_TITLE,
+    baseUrl: ScriptApp.getService().getUrl(), // ★必須：/exec のURL（userCodeAppPanel回避）
     guest: isGuest,
     user: u || (isGuest ? { user_id: 'GUEST', role: 'guest', display_name: 'ゲスト' } : null)
   };
