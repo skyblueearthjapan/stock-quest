@@ -11,7 +11,7 @@
     <div class="userbox">
       ログイン中：<b><?= data.user.display_name ?></b>
       （<?= data.user.role ?><?= data.user.role === 'guest' ? ' / 閲覧のみ' : '' ?>）
-      <a class="link" href="#" onclick="doLogout(); return false;">ログアウト</a>
+      <a class="link" href="?page=logout">ログアウト</a>
     </div>
   </div>
 
@@ -41,24 +41,12 @@
     <div id="msg" class="msg">読み込み中...</div>
     <div id="list"></div>
   </div>
-
-  <!-- ログアウト用フォーム -->
-  <form id="logoutForm" method="get" action="" style="display:none;">
-    <input type="hidden" name="page" value="login">
-  </form>
 </div>
 
 <?!= include('assets_js'); ?>
 <script>
+  const IS_GUEST = <?= (data.user && data.user.role === 'guest') ? 'true' : 'false' ?>;
   let categories = [];
-
-  function doLogout() {
-    google.script.run.withSuccessHandler(function() {
-      document.getElementById('logoutForm').submit();
-    }).withFailureHandler(function() {
-      document.getElementById('logoutForm').submit();
-    }).api_logout();
-  }
 
   function renderTabs(active){
     const el = document.getElementById('tabs');
@@ -106,7 +94,9 @@
         div.className = 'card';
         div.style.margin = '12px 0';
         div.style.cursor = 'pointer';
-        div.onclick = () => location.href = `?page=inv_detail&id=${encodeURIComponent(it.inventory_id)}`;
+        // ゲストの場合は guest=1 を引き継ぐ
+        const guestParam = IS_GUEST ? '&guest=1' : '';
+        div.onclick = () => location.href = `?page=inv_detail&id=${encodeURIComponent(it.inventory_id)}${guestParam}`;
 
         div.innerHTML = `
           <div style="display:flex; gap:14px; align-items:center;">
@@ -127,7 +117,7 @@
       });
     }).withFailureHandler(err => {
       msg.textContent = `エラー：${err.message || err}`;
-    }).api_inventoryList(cat, q);
+    }).api_inventoryList(cat, q, IS_GUEST);
   }
 
   function escapeHtml(s){

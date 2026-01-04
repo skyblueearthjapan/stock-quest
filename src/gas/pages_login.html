@@ -9,6 +9,12 @@
       <h1 class="title"><?= data.appTitle ?> / ログイン</h1>
 
       <div class="card">
+        <? if (data.logged_out) { ?>
+          <div class="info-msg">ログアウトしました</div>
+        <? } ?>
+        <? if (data.need_login) { ?>
+          <div class="info-msg">ログインしてください</div>
+        <? } ?>
         <? if (data.message) { ?>
           <div class="info-msg"><?= data.message ?></div>
         <? } ?>
@@ -73,13 +79,8 @@
       }
 
       function guestLogin() {
-        const msg = document.getElementById('msg');
-        msg.textContent = "ゲストで入室中...";
-        google.script.run.withSuccessHandler(() => {
-          goToHome();
-        }).withFailureHandler(err => {
-          msg.textContent = `失敗：${err.message || err}`;
-        }).api_guestLogin();
+        // サーバーに保存しない。URLで guest=1 を渡して閲覧モードで入る
+        location.href = '?page=inventory&guest=1';
       }
     </script>
   </body>

@@ -11,8 +11,8 @@
     <div class="userbox">
       ログイン中：<b><?= data.user.display_name ?></b>
       （<?= data.user.role ?><?= data.user.role === 'guest' ? ' / 閲覧のみ' : '' ?>）
-      <a class="link" href="?page=inventory">在庫一覧</a>
-      <a class="link" href="#" onclick="doLogout(); return false;">ログアウト</a>
+      <a class="link" href="?page=inventory<?= data.guest ? '&guest=1' : '' ?>">在庫一覧</a>
+      <a class="link" href="?page=logout">ログアウト</a>
     </div>
   </div>
 
@@ -41,25 +41,13 @@
     <div id="useMsg" class="msg"></div>
   </div>
   <? } ?>
-
-  <!-- ログアウト用フォーム -->
-  <form id="logoutForm" method="get" action="" style="display:none;">
-    <input type="hidden" name="page" value="login">
-  </form>
 </div>
 
 <?!= include('assets_js'); ?>
 <script>
   const inventoryId = "<?= data.inventory_id ?>";
+  const IS_GUEST = <?= (data.user && data.user.role === 'guest') ? 'true' : 'false' ?>;
   let inventory = null;
-
-  function doLogout() {
-    google.script.run.withSuccessHandler(function() {
-      document.getElementById('logoutForm').submit();
-    }).withFailureHandler(function() {
-      document.getElementById('logoutForm').submit();
-    }).api_logout();
-  }
 
   function load(){
     google.script.run.withSuccessHandler(res => {
@@ -107,7 +95,7 @@
     }).withFailureHandler(err => {
       document.getElementById('invCard').innerHTML = `エラー：${err.message || err}`;
       document.getElementById('att').innerHTML = '';
-    }).api_inventoryDetail(inventoryId);
+    }).api_inventoryDetail(inventoryId, IS_GUEST);
   }
 
   function useConfirm(){

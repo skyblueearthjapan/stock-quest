@@ -1,41 +1,66 @@
 function doGet(e) {
-  try {
-    const page = (e && e.parameter && e.parameter.page) ? e.parameter.page : 'home';
+  const page = (e && e.parameter && e.parameter.page) ? e.parameter.page : 'login';
+  const isGuest = (e && e.parameter && e.parameter.guest === '1');
 
+  try {
+    // 1) ログイン画面は常に表示OK
     if (page === 'login') return render_('login', {});
+
+    // 2) ログアウト：JSリダイレクト禁止 → loginを直接返す
     if (page === 'logout') {
       logout_();
-      return render_('login', { message: 'ログアウトしました' });
+      return render_('login', { logged_out: true });
     }
 
-    // homeはログイン後のデフォルトページへリダイレクト
+    // 3) ここから先は「ログイン or ゲスト」ならOK
+    const u = currentUser_();
+    if (!u && !isGuest) {
+      return render_('login', { need_login: true });
+    }
+
+    // 4) 入口は inventory（フェーズ2）
     if (page === 'home') {
-      const u = currentUser_();
-      if (!u) return render_('login', { message: 'ログインしてください' });
-      // 在庫一覧へリダイレクト（form submit方式）
-      return render_('inventory', {});
+      // homeは廃止でもOK。inventoryへ案内ページを返す
+      return HtmlService.createHtmlOutput(
+        '<meta http-equiv="refresh" content="0;url=?page=inventory' + (isGuest ? '&guest=1' : '') + '">' +
+        '<div style="font-family:system-ui;padding:16px;">Redirecting...</div>'
+      );
     }
 
-    // 在庫一覧
     if (page === 'inventory') {
-      const u = currentUser_();
-      if (!u) return render_('login', { message: 'ログインしてください' });
-      return render_('inventory', {});
+      return render_('inventory', { guest: isGuest });
     }
 
-    // 在庫詳細
     if (page === 'inv_detail') {
-      const u = currentUser_();
-      if (!u) return render_('login', { message: 'ログインしてください' });
       const id = (e.parameter && e.parameter.id) ? String(e.parameter.id) : '';
-      return render_('inventory_detail', { inventory_id: id });
+      return render_('inventory_detail', { inventory_id: id, guest: isGuest });
     }
 
-    // 未定義ルート
-    return renderError_(new Error('PAGE_NOT_FOUND: ' + page), { page });
+    // 未定義
+    return renderError_(new Error('PAGE_NOT_FOUND: ' + page), { page, params: e.parameter });
   } catch (err) {
-    return renderError_(err, { page: (e && e.parameter && e.parameter.page) });
+    return safePlainError_(err, { page, params: (e && e.parameter) });
   }
+}
+
+/** 最終退避：テンプレが壊れても必ず出す */
+function safePlainError_(err, context) {
+  const msg = (err && err.message) ? err.message : String(err);
+  const html =
+    '<div style="font-family:system-ui; padding:16px;">' +
+    '<h2>App Error</h2>' +
+    '<pre style="white-space:pre-wrap; background:#f6f8fa; padding:12px; border-radius:8px;">' +
+    escapeHtml_(msg) + '\n\n' + escapeHtml_(JSON.stringify(context || {}, null, 2)) +
+    '</pre>' +
+    '<p><a href="?page=login">Go to login</a></p>' +
+    '</div>';
+  return HtmlService.createHtmlOutput(html).setTitle('Error');
+}
+
+function escapeHtml_(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 function include(filename) {
@@ -64,13 +89,15 @@ function api_logout() {
 
 // ========== 在庫関連API ==========
 
-function api_inventoryList(category, q) {
-  requireLogin_();
+function api_inventoryList(category, q, isGuest) {
+  const u = currentUser_();
+  if (!u && !isGuest) throw new Error('NOT_LOGGED_IN');
   return inventoryList_(category, q);
 }
 
-function api_inventoryDetail(inventoryId) {
-  requireLogin_();
+function api_inventoryDetail(inventoryId, isGuest) {
+  const u = currentUser_();
+  if (!u && !isGuest) throw new Error('NOT_LOGGED_IN');
   return inventoryDetail_(inventoryId);
 }
 
