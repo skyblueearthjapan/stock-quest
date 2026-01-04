@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+  <head>
+    <base target="_top">
+    <?!= include('assets_css'); ?>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="title"><?= data.appTitle ?> / ログイン</h1>
+
+      <div class="card">
+        <label>名前（候補検索）</label>
+        <input id="name" type="text" placeholder="例：山田" oninput="onSearch()" />
+        <div id="candidates" class="candidates"></div>
+
+        <label>PIN（4桁）</label>
+        <input id="pin" type="password" inputmode="numeric" maxlength="4" />
+
+        <button class="btn" onclick="login()">ログイン</button>
+        <div id="msg" class="msg"></div>
+      </div>
+    </div>
+
+    <?!= include('assets_js'); ?>
+    <script>
+      let selectedName = "";
+
+      function onSearch() {
+        const q = document.getElementById('name').value;
+        google.script.run.withSuccessHandler(list => {
+          const el = document.getElementById('candidates');
+          el.innerHTML = "";
+          list.forEach(u => {
+            const b = document.createElement('button');
+            b.className = 'chip';
+            b.textContent = `${u.display_name} (${u.role})`;
+            b.onclick = () => {
+              selectedName = u.display_name;
+              document.getElementById('name').value = u.display_name;
+              el.innerHTML = "";
+            };
+            el.appendChild(b);
+          });
+        }).api_searchUsers(q);
+      }
+
+      function login() {
+        const name = document.getElementById('name').value.trim();
+        const pin = document.getElementById('pin').value.trim();
+        const msg = document.getElementById('msg');
+        msg.textContent = "認証中...";
+
+        google.script.run.withSuccessHandler(user => {
+          msg.textContent = `ようこそ ${user.display_name} さん`;
+          location.href = '?page=home';
+        }).withFailureHandler(err => {
+          msg.textContent = `ログイン失敗：${err.message || err}`;
+        }).api_login(name, pin);
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+  <head>
+    <base target="_top">
+    <?!= include('assets_css'); ?>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="title">エラー</h1>
+      <div class="card">
+        <p><b><?= data.message ?></b></p>
+        <pre><?!= JSON.stringify(data.context, null, 2) ?></pre>
+        <a class="link" href="?page=login">ログインへ</a>
+      </div>
+    </div>
+  </body>
+</html>

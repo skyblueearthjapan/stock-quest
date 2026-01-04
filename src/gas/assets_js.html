@@ -1,0 +1,12 @@
+<script>
+  // 共通で使うユーティリティを今後ここに増やす
+
+  // トースト表示用
+  function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + (type || 'info');
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+</script>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+  <head>
+    <base target="_top">
+    <?!= include('assets_css'); ?>
+  </head>
+  <body>
+    <div class="container">
+      <div class="topbar">
+        <div class="brand"><?= data.appTitle ?></div>
+        <div class="userbox">
+          ログイン中：<b><?= data.user.display_name ?></b>（<?= data.user.role ?>）
+          <a class="link" href="?page=logout">ログアウト</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>フェーズ0〜1：起動確認</h2>
+        <p>ここが表示されていれば、ルーティング・セッション・Spreadsheet接続が成功しています。</p>
+        <h3>Config（一部）</h3>
+        <pre><?!= JSON.stringify(data.config, null, 2) ?></pre>
+      </div>
+
+      <div class="card">
+        <h3>次フェーズ（2〜3）で追加するメニュー枠</h3>
+        <ul>
+          <li>在庫一覧（カテゴリタブ＋検索）</li>
+          <li>在庫詳細（添付閲覧＋使用確定）</li>
+          <li>チャット（在庫詳細内）</li>
+        </ul>
+      </div>
+    </div>
+
+    <?!= include('assets_js'); ?>
+  </body>
+</html>
