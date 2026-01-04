@@ -812,6 +812,198 @@ notes: 個別目標は必要になったらON
 
 ---
 
+## Shelves シート（棚：トップビューのブロック）
+
+**説明**: 棚ボタン（ブロック）1つ＝1行。押すと『棚の側面』or『棚の在庫一覧』へ。座標は%(0-100)。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| shelf_id* | ◯ | 主キー（例: SH-HQ1-A） |
+| map_id* | ◯ | マップID（Maps参照） |
+| shelf_label* | ◯ | 棚ラベル（棚A等） |
+| top_x% | | 上面図クリック範囲 X座標(%) |
+| top_y% | | 上面図クリック範囲 Y座標(%) |
+| top_w% | | 上面図クリック範囲 幅(%) |
+| top_h% | | 上面図クリック範囲 高さ(%) |
+| side_image_fileId | | 側面図のDrive fileId |
+| shelf_photo_fileId | | 棚写真のDrive fileId |
+| shelf_photo_note | | 棚写真メモ |
+| max_levels | | 最大段数 |
+| sort_order | | 表示順 |
+| notes | | メモ |
+
+**データ一覧**:
+
+| shelf_id | map_id | shelf_label | max_levels | sort_order | notes |
+|----------|--------|-------------|------------|------------|-------|
+| SH-HQ1-A | MAP-HQ-1 | 棚A | 3 | 1 | 例：エリア1の棚A |
+| SH-HQ2-A | MAP-HQ-2 | 棚A | 3 | 1 | 例：エリア2の棚A |
+| SH-2F-A | MAP-2F-1 | 棚A | 2 | 1 | 例：第二工場の棚A |
+
+---
+
+## Bins シート（棚の区画：段/位置）
+
+**説明**: 在庫が最終的に紐づく最小単位。側面図上のクリック領域（矩形）も%で管理。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| bin_id* | ◯ | 主キー（例: BIN-HQ1-A-2-3） |
+| shelf_id* | ◯ | 棚ID（Shelves参照） |
+| level* | ◯ | 段（床/1段/2段...） |
+| position* | ◯ | 位置（並び順） |
+| label | | ラベル（例: 2段3番） |
+| side_x% | | 側面図クリック範囲 X座標(%) |
+| side_y% | | 側面図クリック範囲 Y座標(%) |
+| side_w% | | 側面図クリック範囲 幅(%) |
+| side_h% | | 側面図クリック範囲 高さ(%) |
+| bin_photo_fileId | | 区画写真のDrive fileId |
+| bin_photo_note | | 区画写真メモ |
+| is_active | | 有効フラグ（TRUE/FALSE） |
+| notes | | メモ |
+
+**サンプルデータ**:
+```
+bin_id: BIN-HQ1-A-2-3
+shelf_id: SH-HQ1-A
+level: 2
+position: 3
+label: 2段3番
+is_active: TRUE
+notes: 例：棚Aの2段3番
+```
+
+---
+
+## LevelRules シート（レベル設計）
+
+**説明**: 経験値(XP)→レベルの変換ルール。若手向けRPG表示の基礎。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| level* | ◯ | レベル |
+| xp_required_total* | ◯ | 必要累計XP |
+| title | | レベル名 |
+| notes | | メモ |
+| updated_at | | 更新日時 |
+| updated_by | | 更新者 |
+
+**データ一覧（3XPごとにLv+1）**:
+
+| level | xp_required_total | title | notes |
+|-------|-------------------|-------|-------|
+| 1 | 0 | Lv1 | 3XPごとにLv+1（小=1/中=2/大=3/特大=5） |
+| 2 | 3 | Lv2 | |
+| 3 | 6 | Lv3 | |
+| 4 | 9 | Lv4 | |
+| 5 | 12 | Lv5 | |
+| 6 | 15 | Lv6 | |
+| 7 | 18 | Lv7 | |
+| 8 | 21 | Lv8 | |
+| 9 | 24 | Lv9 | |
+| 10 | 27 | Lv10 | |
+| 11 | 30 | Lv11 | |
+| 12 | 33 | Lv12 | |
+| 13 | 36 | Lv13 | |
+| 14 | 39 | Lv14 | |
+| 15 | 42 | Lv15 | |
+| 16 | 45 | Lv16 | |
+| 17 | 48 | Lv17 | |
+| 18 | 51 | Lv18 | |
+| 19 | 54 | Lv19 | |
+| 20 | 57 | Lv20 | |
+| 21 | 60 | Lv21 | |
+| 22 | 63 | Lv22 | |
+| 23 | 66 | Lv23 | |
+| 24 | 69 | Lv24 | |
+| 25 | 72 | Lv25 | |
+| 26 | 75 | Lv26 | |
+| 27 | 78 | Lv27 | |
+| 28 | 81 | Lv28 | |
+| 29 | 84 | Lv29 | |
+| 30 | 87 | Lv30 | |
+
+**計算ルール**: Lv = floor(XP / 3) + 1（最大Lv30）
+
+---
+
+## UserBadges シート（バッジ実績）
+
+**説明**: 誰がどのバッジを獲得したかの実績。社内説明の根拠にもなる。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| user_badge_id* | ◯ | 主キー（例: UB-000001） |
+| user_id* | ◯ | ユーザーID |
+| badge_id* | ◯ | バッジID（Badges参照） |
+| period_id | | 期間ID（Periods参照） |
+| granted_at* | ◯ | 付与日時 |
+| source_metric | | 付与根拠の指標 |
+| source_value | | 付与根拠の値 |
+| notes | | メモ |
+
+**サンプルデータ**:
+```
+user_badge_id: UB-000001
+user_id: U-001
+badge_id: B-001
+granted_at: 2026-01-10 12:00
+source_metric: first_use
+source_value: 1
+notes: 初使用
+```
+
+---
+
+## CharacterProfiles シート（キャラクター設定）
+
+**説明**: 若手向け"ゲーム画面"用。各設計者を主人公キャラとして表示。社長レポートには使わない。
+
+**カラム構成**:
+
+| カラム名 | 必須 | 説明 |
+|---------|-----|------|
+| user_id* | ◯ | 主キー（Users参照、1:1） |
+| character_name* | ◯ | キャラクター名 |
+| job_class | | 職業クラス |
+| avatar_fileId | | アバター画像のDrive fileId |
+| bio | | 自己紹介 |
+| theme | | テーマ（DQ風等） |
+| is_public_to_designers | | 他設計者に公開（TRUE/FALSE） |
+| updated_at | | 更新日時 |
+| updated_by | | 更新者 |
+
+**サンプルデータ**:
+```
+user_id: U-001
+character_name: 山田の勇者
+job_class: 勇者
+bio: 在庫を活用して設計効率を上げる。
+theme: DQ風
+is_public_to_designers: TRUE
+updated_at: 2026-01-04 00:00
+updated_by: admin
+
+user_id: U-002
+character_name: 在庫番人
+job_class: 番人
+bio: 在庫の守護者。迅速に移動・準備する。
+theme: DQ風
+is_public_to_designers: FALSE
+updated_at: 2026-01-04 00:00
+updated_by: admin
+```
+
+---
+
 ## 以下、追加のスクリーンショットを受け取り次第追記
 
 （続きをお送りください）
