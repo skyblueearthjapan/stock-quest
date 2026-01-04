@@ -32,15 +32,20 @@
           <li>チャット（在庫詳細内）</li>
         </ul>
       </div>
+
+      <!-- リダイレクト用の隠しフォーム -->
+      <form id="logoutForm" method="get" action="" style="display:none;">
+        <input type="hidden" name="page" value="login">
+      </form>
     </div>
 
     <?!= include('assets_js'); ?>
     <script>
       function doLogout() {
         google.script.run.withSuccessHandler(function() {
-          location.reload();
+          document.getElementById('logoutForm').submit();
         }).withFailureHandler(function() {
-          location.reload();
+          document.getElementById('logoutForm').submit();
         }).api_logout();
       }
     </script>

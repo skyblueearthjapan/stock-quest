@@ -23,6 +23,11 @@
         <button class="btn" onclick="login()">ログイン</button>
         <button class="btnSub" onclick="guestLogin()">ゲストで入る（閲覧のみ）</button>
         <div id="msg" class="msg"></div>
+
+        <!-- リダイレクト用の隠しフォーム -->
+        <form id="redirectForm" method="get" action="" style="display:none;">
+          <input type="hidden" name="page" value="home">
+        </form>
       </div>
     </div>
 
@@ -49,6 +54,10 @@
         }).api_searchUsers(q);
       }
 
+      function goToHome() {
+        document.getElementById('redirectForm').submit();
+      }
+
       function login() {
         const name = document.getElementById('name').value.trim();
         const pin = document.getElementById('pin').value.trim();
@@ -57,7 +66,7 @@
 
         google.script.run.withSuccessHandler(user => {
           msg.textContent = `ようこそ ${user.display_name} さん`;
-          location.href = '?page=home';
+          goToHome();
         }).withFailureHandler(err => {
           msg.textContent = `ログイン失敗：${err.message || err}`;
         }).api_login(name, pin);
@@ -67,7 +76,7 @@
         const msg = document.getElementById('msg');
         msg.textContent = "ゲストで入室中...";
         google.script.run.withSuccessHandler(() => {
-          location.href = '?page=home';
+          goToHome();
         }).withFailureHandler(err => {
           msg.textContent = `失敗：${err.message || err}`;
         }).api_guestLogin();
