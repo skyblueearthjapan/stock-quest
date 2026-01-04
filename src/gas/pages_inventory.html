@@ -195,13 +195,17 @@
       grid.className = 'grid';
 
       items.forEach(item => {
-        const card = document.createElement('div');
+        // div → a（JSに依存しない遷移にする）
+        const card = document.createElement('a');
         card.className = 'card item-card';
         card.style.margin = '0';
+        card.style.display = 'block';
+        card.style.textDecoration = 'none';
+        card.style.color = 'inherit';
 
-        // 詳細ページURL生成
-        const detailUrl = buildDetailUrl(item.inventory_id);
-        card.onclick = () => { window.location.href = detailUrl; };
+        // ゲストパラメータを引き継ぐ
+        const guestParam = IS_GUEST ? '&guest=1' : '';
+        card.href = BASE_URL + '?page=inventory_detail&inventory_id=' + encodeURIComponent(item.inventory_id) + guestParam;
 
         // サムネイル
         let thumbContent = item.size_class || '-';
@@ -219,7 +223,7 @@
               '</div>' +
               '<div class="item-meta">在庫：<span class="item-qty">' + item.qty + '</span></div>' +
             '</div>' +
-            '<a class="item-arrow" href="' + detailUrl + '" onclick="event.stopPropagation();">→</a>' +
+            '<div class="item-arrow">→</div>' +
           '</div>';
 
         grid.appendChild(card);
@@ -232,15 +236,6 @@
     function escapeHtml(s) {
       return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-    }
-
-    // 詳細ページURLを安全に生成
-    function buildDetailUrl(inventoryId) {
-      const url = new URL(BASE_URL);
-      url.searchParams.set('page', 'inventory_detail');
-      url.searchParams.set('inventory_id', inventoryId);
-      if (IS_GUEST) url.searchParams.set('guest', '1');
-      return url.toString();
     }
 
     // 初期ロード
