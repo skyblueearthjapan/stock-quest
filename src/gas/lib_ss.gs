@@ -8,6 +8,11 @@ function sh_(name) {
   return sheet;
 }
 
+/** ヘッダー正規化：末尾の * / ＊ を除去してトリム */
+function normHeader_(v) {
+  return String(v ?? '').trim().replace(/[＊*]+$/g, '');
+}
+
 function getConfigMap_() {
   const sheet = sh_(ENV.SHEETS.CONFIG);
   const values = sheet.getDataRange().getValues();
@@ -37,7 +42,8 @@ function readUsers_() {
     const obj = {};
     for (let c = 0; c < headers.length; c++) {
       if (!headers[c]) continue;
-      obj[String(headers[c])] = row[c];
+      // ★ヘッダー名を正規化（*除去）
+      obj[normHeader_(headers[c])] = row[c];
     }
     rows.push(obj);
   }
@@ -52,7 +58,9 @@ function readTable_(sheetName, headerRow) {
   const values = sheet.getDataRange().getValues();
   if (values.length <= headerRow) return { headers: [], rows: [], sheet };
 
-  const headers = values[headerRow - 1]; // 1-index
+  const rawHeaders = values[headerRow - 1]; // 1-index
+  // ★ヘッダー名を正規化（*除去）
+  const headers = rawHeaders.map(h => normHeader_(h));
   const startRow = headerRow;            // 次の行からデータ
   const rows = [];
 
@@ -63,7 +71,7 @@ function readTable_(sheetName, headerRow) {
     for (let c = 0; c < headers.length; c++) {
       const h = headers[c];
       if (!h) continue;
-      obj[String(h)] = row[c];
+      obj[h] = row[c];
     }
     rows.push(obj);
   }

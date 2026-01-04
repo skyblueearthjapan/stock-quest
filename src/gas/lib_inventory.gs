@@ -101,15 +101,19 @@ function useConfirm_(payload) {
   // 在庫行特定（行番号も必要）
   const sheet = invTable.sheet;
   const values = sheet.getDataRange().getValues();
-  const headers = values[hdr - 1];
+  const rawHeaders = values[hdr - 1];
+  // ★ヘッダー名を正規化（*除去）してインデックスマップを作成
+  const headerMap = {};
+  rawHeaders.forEach((h, i) => { headerMap[normHeader_(h)] = i; });
 
   let targetRowIndex1 = -1; // シート上の1-index行番号
   let inv = null;
 
+  const idxId = headerMap['inventory_id'];
+  if (idxId === undefined) throw new Error('Inventory.inventory_id header missing');
+
   for (let r = hdr; r < values.length; r++) {
     const row = values[r];
-    const idxId = headers.indexOf('inventory_id');
-    if (idxId < 0) throw new Error('Inventory.inventory_id header missing');
     if (String(row[idxId] || '') === inventoryId) {
       targetRowIndex1 = r + 1; // valuesは0-index
       inv = invRows.find(x => String(x['inventory_id'] || '') === inventoryId);
@@ -129,24 +133,26 @@ function useConfirm_(payload) {
   const points = pointsPer * qtyUse;
 
   // 1) Inventory.qty 更新
-  const idxQty = headers.indexOf('qty');
-  if (idxQty < 0) throw new Error('Inventory.qty header missing');
+  const idxQty = headerMap['qty'];
+  if (idxQty === undefined) throw new Error('Inventory.qty header missing');
   sheet.getRange(targetRowIndex1, idxQty + 1).setValue(currentQty - qtyUse);
 
   // 2) UsageLog 追記
   const logSheet = sh_('UsageLog');
   const logValues = logSheet.getDataRange().getValues();
-  const logHeaders = logValues[hdr - 1];
-  const logRow = {};
-  logHeaders.forEach(h => { if (h) logRow[h] = ''; });
+  const logRawHeaders = logValues[hdr - 1];
+  // ★正規化したヘッダー名でマップ作成
+  const logHeaderMap = {};
+  logRawHeaders.forEach((h, i) => { if (h) logHeaderMap[normHeader_(h)] = i; });
 
   const logId = 'L-' + Utilities.getUuid().slice(0, 8).toUpperCase();
   const ts = new Date();
 
-  // ヘッダー名に合わせて設定（*付きの場合も考慮）
+  // 出力行を作成（正規化されたヘッダー名で設定）
+  const logOut = new Array(logRawHeaders.length).fill('');
+
   const setLogValue = (key, value) => {
-    if (logRow.hasOwnProperty(key)) logRow[key] = value;
-    if (logRow.hasOwnProperty(key + '*')) logRow[key + '*'] = value;
+    if (logHeaderMap[key] !== undefined) logOut[logHeaderMap[key]] = value;
   };
 
   setLogValue('log_id', logId);
@@ -159,8 +165,7 @@ function useConfirm_(payload) {
   setLogValue('points', points);
   setLogValue('notes', note);
 
-  const out = logHeaders.map(h => (h ? logRow[h] : ''));
-  logSheet.appendRow(out);
+  logSheet.appendRow(logOut);
 
   return { ok: true, inventory_id: inventoryId, qty_after: currentQty - qtyUse, points };
 }
