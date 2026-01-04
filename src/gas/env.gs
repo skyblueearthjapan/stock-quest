@@ -7,7 +7,7 @@ const ENV = {
     displayName: 'iq_display_name',
   },
   // PINハッシュ方式：SHA-256( pin + ":" + user_id + ":" + salt )
-  PIN_SALT: 'stock-quest-2026-iq-secret',
+  PIN_SALT: 'stock-quest-2026-secret',
   SHEETS: {
     CONFIG: 'Config',
     USERS: 'Users',
