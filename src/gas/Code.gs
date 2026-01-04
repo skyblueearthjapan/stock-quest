@@ -37,3 +37,34 @@ function api_login(displayName, pin) {
 function api_searchUsers(q) {
   return searchUserCandidates_(q);
 }
+
+/**
+ * 管理者用：PINハッシュ生成ツール
+ * GASエディタで実行：generatePinHash_('1234', 'U-001')
+ * → 結果をUserAuthシートのpin_hash列に貼り付ける
+ */
+function generatePinHash_(pin, userId) {
+  const hash = pinHash_(String(pin), String(userId));
+  Logger.log(`PIN: ${pin}, User: ${userId}`);
+  Logger.log(`Hash: ${hash}`);
+  return hash;
+}
+
+/**
+ * 一括生成例：全ユーザーに同じPIN（例：1234）を設定
+ * GASエディタで実行してログを確認
+ */
+function generateAllPinHashes_() {
+  const users = readUsers_();
+  const defaultPin = '1234'; // 初期PIN
+
+  Logger.log('=== PIN Hash一覧（UserAuthシートに貼り付け用）===');
+  Logger.log('user_id\tpin_hash');
+
+  users.forEach(u => {
+    const userId = String(u['user_id'] || '');
+    if (!userId) return;
+    const hash = pinHash_(defaultPin, userId);
+    Logger.log(`${userId}\t${hash}`);
+  });
+}

@@ -1,5 +1,5 @@
 const ENV = {
-  SPREADSHEET_ID: '<<YOUR_SPREADSHEET_ID>>', // v5をインポートしたSpreadsheet
+  SPREADSHEET_ID: '1C9efggPfVBx1-ZpM5V8KnDAsl-2Js2HLrY-QCKGAENM', // v5をインポートしたSpreadsheet
   APP_TITLE: '在庫管理クエスト',
   SESSION_KEYS: {
     userId: 'iq_user_id',
@@ -7,7 +7,7 @@ const ENV = {
     displayName: 'iq_display_name',
   },
   // PINハッシュ方式：SHA-256( pin + ":" + user_id + ":" + salt )
-  PIN_SALT: '<<SET_RANDOM_SALT>>',
+  PIN_SALT: 'stock-quest-2026-iq-secret',
   SHEETS: {
     CONFIG: 'Config',
     USERS: 'Users',
