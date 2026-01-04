@@ -5,13 +5,13 @@ function doGet(e) {
     if (page === 'login') return render_('login', {});
     if (page === 'logout') {
       logout_();
-      return HtmlService.createHtmlOutput('<script>location.href="?page=login";</script>');
+      return render_('login', { message: 'ログアウトしました' });
     }
 
-    // homeはログイン必須にする（未ログインならloginへ）
+    // homeはログイン必須にする（未ログインならloginを表示）
     if (page === 'home') {
       const u = currentUser_();
-      if (!u) return HtmlService.createHtmlOutput('<script>location.href="?page=login";</script>');
+      if (!u) return render_('login', { message: 'ログインしてください' });
       const cfg = getConfigMap_();
       return render_('home', { config: cfg });
     }

@@ -9,6 +9,10 @@
       <h1 class="title"><?= data.appTitle ?> / ログイン</h1>
 
       <div class="card">
+        <? if (data.message) { ?>
+          <div class="info-msg"><?= data.message ?></div>
+        <? } ?>
+
         <label>名前（候補検索）</label>
         <input id="name" type="text" placeholder="例：山田" oninput="onSearch()" />
         <div id="candidates" class="candidates"></div>
