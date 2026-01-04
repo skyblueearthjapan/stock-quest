@@ -10,7 +10,7 @@
         <div class="brand"><?= data.appTitle ?></div>
         <div class="userbox">
           ログイン中：<b><?= data.user.display_name ?></b>（<?= data.user.role ?><?= data.user.role === 'guest' ? ' / 閲覧のみ' : '' ?>）
-          <a class="link" href="?page=logout">ログアウト</a>
+          <a class="link" href="#" onclick="doLogout(); return false;">ログアウト</a>
         </div>
       </div>
 
@@ -35,5 +35,14 @@
     </div>
 
     <?!= include('assets_js'); ?>
+    <script>
+      function doLogout() {
+        google.script.run.withSuccessHandler(function() {
+          window.top.location.reload();
+        }).withFailureHandler(function() {
+          window.top.location.reload();
+        }).api_logout();
+      }
+    </script>
   </body>
 </html>

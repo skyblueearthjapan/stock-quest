@@ -47,6 +47,11 @@ function api_guestLogin() {
   return guestLogin_();
 }
 
+function api_logout() {
+  logout_();
+  return { success: true };
+}
+
 /**
  * 管理者用：PINハッシュ生成ツール
  * GASエディタで実行：generatePinHash_('1234', 'U-001')
